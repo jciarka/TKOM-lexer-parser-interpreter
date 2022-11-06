@@ -12,4 +12,8 @@
     <Folder Include="Infrastructure\Parser\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />
+  </ItemGroup>
+
 </Project>

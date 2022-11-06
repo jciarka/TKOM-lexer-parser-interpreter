@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.Infrastructure.Lekser.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,33 +46,33 @@ namespace Application.Infrastructure.Helpers
 
             if (escaped)
             {
-                if (letter.Equals("n"))
+                if (letter.Equals('n'))
                 {
-                    _builder.Append("\n");
+                    _builder.Append('\n');
                 }
-                else if (letter.Equals("t"))
+                else if (letter.Equals('t'))
                 {
-                    _builder.Append("\t");
+                    _builder.Append('\t');
                 }
-                else if (letter.Equals("f"))
+                else if (letter.Equals('f'))
                 {
-                    _builder.Append("\f");
+                    _builder.Append('\f');
                 }
-                else if (letter.Equals("b"))
+                else if (letter.Equals('b'))
                 {
-                    _builder.Append("\b");
+                    _builder.Append('\b');
                 }
-                else if (letter.Equals("v"))
+                else if (letter.Equals('v'))
                 {
-                    _builder.Append("\v");
+                    _builder.Append('\v');
                 }
-                else if (letter.Equals("\""))
+                else if (letter.Equals('\''))
                 {
-                    _builder.Append("\"");
+                    _builder.Append('\'');
                 }
-                else if (letter.Equals("\\"))
+                else if (letter.Equals('\\'))
                 {
-                    _builder.Append("\\");
+                    _builder.Append('\\');
                 }
                 else
                 {
@@ -95,6 +96,12 @@ namespace Application.Infrastructure.Helpers
                     State = LiteralBuilderState.VALID;
                     return true;
                 }
+            }
+
+            if (letter.Equals(CharactersHelpers.EOF) || letter.Equals(CharactersHelpers.NL))
+            {
+                State = LiteralBuilderState.INVALID;
+                return false;
             }
 
             if (letter.Equals('\\'))

@@ -56,9 +56,9 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.LESS_EQUAL, Lexeme = "<=" },
             new TokenLexeme() { Type = TokenType.TRANSFER_FROM, Lexeme = ">>" },
             new TokenLexeme() { Type = TokenType.TRANSFER_TO, Lexeme = "<<" },
-            new TokenLexeme() { Type = TokenType.TRANSFER_PRCT_FROM, Lexeme = ">>" },
+            new TokenLexeme() { Type = TokenType.TRANSFER_PRCT_FROM, Lexeme = "%>" },
             new TokenLexeme() { Type = TokenType.TRANSFER_PRCT_TO, Lexeme = "<%" },
-            new TokenLexeme() { Type = TokenType.ARROW, Lexeme = "%>" },
+            new TokenLexeme() { Type = TokenType.ARROW, Lexeme = "=>" },
         };
 
         public static IEnumerable<TokenLexeme> OperatorsTokenLexems =>

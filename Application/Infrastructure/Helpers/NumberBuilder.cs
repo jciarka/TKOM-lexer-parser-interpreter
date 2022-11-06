@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,13 +9,13 @@ namespace Application.Infrastructure.Helpers
 {
     public class NumberBuilder
     {
-        private decimal value = 1;
+        private decimal value = 0m;
+        private decimal factorial = 1m;
+        private int? decimalPrecision = null;
 
         public NumberBuilderState State { get; private set; } = NumberBuilderState.CHARACTER_REQUIRED;
 
         public bool IsInteger => decimalPrecision == null;
-
-        private int? decimalPrecision = null;
 
         public bool tryAppend(char character)
         {
@@ -61,27 +62,13 @@ namespace Application.Infrastructure.Helpers
                     return false;
                 }
             }
-
-            if (IsInteger)
-            {
-                try
-                {
-                    value = 10 * value + digit;
-                    State = NumberBuilderState.VALID;
-                    return true;
-                }
-                catch (OverflowException)
-                {
-                    State = NumberBuilderState.OVERFLOWED;
-                    return false;
-                }
-            }
             else
             {
                 try
                 {
+                    factorial *= 0.1m;
+                    value += (digit * factorial);
                     decimalPrecision += 1;
-                    value = value + Decimal.Divide(digit, 10 ^ (int)decimalPrecision!);
                     State = NumberBuilderState.VALID;
                     return true;
                 }

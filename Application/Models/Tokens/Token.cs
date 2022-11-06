@@ -19,7 +19,7 @@ namespace Application.Models.Tokens
         /// <summary>
         /// Token position information
         /// </summary>
-        public TokenPosition? Position { get; set; }
+        public CharacterPosition? Position { get; set; }
 
         /// <summary>
         /// string value of token
@@ -35,13 +35,5 @@ namespace Application.Models.Tokens
         /// Type of value representet by token - type lexeme
         /// </summary>
         public string? ValueType { get; set; }
-    }
-
-    public class TokenPosition
-    {
-        public long Line { get; set; }
-        public long Column { get; set; }
-        public long Position { get; set; }
-        public long LinePosition { get; set; }
     }
 }
