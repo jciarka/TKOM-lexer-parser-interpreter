@@ -59,7 +59,7 @@ namespace Tests.Lexer
 
             Assert.Equal(TokenType.LITERAL, token.Type);
             Assert.Equal(integer, token.Lexeme);
-            Assert.Equal(int.Parse(integer), token.Value);
+            Assert.Equal(int.Parse(integer), token.IntValue);
             Assert.Equal("int", token.ValueType);
         }
 
@@ -79,7 +79,7 @@ namespace Tests.Lexer
             var bareDecimal = decimal.Parse(bareDecimalString, new NumberFormatInfo { NumberDecimalSeparator = "." });
 
             Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(bareDecimal, token.Value);
+            Assert.Equal(bareDecimal, token.DecimalValue);
             Assert.Equal(number, token.Lexeme);
             Assert.Equal("decimal", token.ValueType);
         }
@@ -100,7 +100,7 @@ namespace Tests.Lexer
             var bareDecimal = decimal.Parse(bareDecimalString, new NumberFormatInfo { NumberDecimalSeparator = "." });
 
             Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(bareDecimal, token.Value);
+            Assert.Equal(bareDecimal, token.DecimalValue);
             Assert.Equal(number, token.Lexeme);
             Assert.Equal(currency, token.ValueType);
         }
@@ -130,7 +130,7 @@ namespace Tests.Lexer
             var token = lexer.Read();
 
             Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(targetValue, token.Value);
+            Assert.Equal(targetValue, token.StringValue);
             Assert.Equal(lexeme, token.Lexeme);
             Assert.Equal("string", token.ValueType);
         }
@@ -147,7 +147,24 @@ namespace Tests.Lexer
         }
 
         [Theory]
+        [InlineData("true")]
+        [InlineData("false")]
+        public void ShouldBoolLiteralGiveLiteralTokenWithCorrectValue(string content)
+        {
+            var reader = new StringSourceReader(content);
+            var lexer = new LexerEngine(reader);
+
+            var token = lexer.Read();
+
+            Assert.Equal(TokenType.LITERAL, token.Type);
+            Assert.Equal(content.Equals("true") ? true : false, token.BoolValue);
+            Assert.Equal("bool", token.ValueType);
+            Assert.Equal(content, token.Lexeme);
+        }
+
+        [Theory]
         [InlineData("myVariable")]
+        [InlineData("my_variable")]
         public void ShouldIdentifierGiveTokenWithWrightValue(string identifier)
         {
             var reader = new StringSourceReader(identifier);
@@ -186,7 +203,7 @@ namespace Tests.Lexer
             var token = lexer.Read();
 
             Assert.Equal(TokenType.COMMENT, token.Type);
-            Assert.Equal(content, token.Value);
+            Assert.Equal(content, token.Lexeme);
 
             token = lexer.Read();
 

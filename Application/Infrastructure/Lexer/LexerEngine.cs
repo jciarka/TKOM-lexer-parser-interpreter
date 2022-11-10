@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Lekser
 {
-    public class LexerEngine
+    public class LexerEngine : ILexer
     {
         private readonly ISourceReader _reader;
         private readonly LinkedList<Token> _waiting;
@@ -255,7 +255,7 @@ namespace Application.Infrastructure.Lekser
             {
                 Type = TokenType.COMMENT,
                 Position = tokenPosition,
-                Value = commentBuilder.ToString(),
+                Lexeme = commentBuilder.ToString(),
             };
 
             return true;
@@ -303,7 +303,7 @@ namespace Application.Infrastructure.Lekser
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
                     Position = tokenPosition,
-                    Value = numberBuilder.ToInteger(),
+                    IntValue = numberBuilder.ToInteger(),
                     ValueType = finalType
                 };
             }
@@ -314,7 +314,7 @@ namespace Application.Infrastructure.Lekser
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
                     Position = tokenPosition,
-                    Value = numberBuilder.ToDecimal(),
+                    DecimalValue = numberBuilder.ToDecimal(),
                     ValueType = finalType
                 };
             }
@@ -426,7 +426,7 @@ namespace Application.Infrastructure.Lekser
             {
                 Lexeme = lexemeBuilder.ToString(),
                 Type = TokenType.LITERAL,
-                Value = literalBuilder.ToString(),
+                StringValue = literalBuilder.ToString(),
                 ValueType = "string",
                 Position = getCharacterPositionDetails(),
             };
@@ -452,7 +452,7 @@ namespace Application.Infrastructure.Lekser
             var builder = new StringBuilder();
 
             // grab next charaters while are letters
-            while (char.IsLetterOrDigit(letter) && builder.Length < _options.LiteralMaxLength)
+            while ((char.IsLetterOrDigit(letter) || letter.Equals('_')) && builder.Length < _options.LiteralMaxLength)
             {
                 builder.Append(_reader.Read());
                 letter = _reader.Peek();
@@ -470,12 +470,42 @@ namespace Application.Infrastructure.Lekser
                 return true;
             }
 
+            if (tryMatchBooleanLiteralToken(lexeme, tokenPosition, out token))
+            {
+                return true;
+            }
+
             if (tryMatchTypeToken(lexeme, tokenPosition, out token))
             {
                 return true;
             }
 
             token = buildIdentifier(lexeme, tokenPosition);
+            return true;
+        }
+
+        private bool tryMatchBooleanLiteralToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        {
+            token = null;
+
+            bool? boolValue = null;
+            if (lexeme.Equals("true")) boolValue = true;
+            if (lexeme.Equals("false")) boolValue = false;
+
+            if (boolValue == null)
+            {
+                return false;
+            }
+
+            token = new Token()
+            {
+                Type = TokenType.LITERAL,
+                ValueType = "bool",
+                BoolValue = boolValue,
+                Lexeme = lexeme,
+                Position = tokenPosition,
+            };
+
             return true;
         }
 
@@ -537,7 +567,7 @@ namespace Application.Infrastructure.Lekser
                 Lexeme = typeInfo.Lexeme,
                 Type = TokenType.TYPE,
                 Position = tokenPosition,
-                Value = typeInfo.Lexeme,
+                StringValue = typeInfo.Lexeme,
             };
 
             return true;

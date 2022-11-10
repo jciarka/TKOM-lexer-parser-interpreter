@@ -26,10 +26,10 @@ namespace Application.Models.Tokens
         /// </summary>
         public string? Lexeme { get; set; }
 
-        /// <summary>
-        /// value represented by token // only literals
-        /// </summary>
-        public Object? Value { get; set; }
+        public bool? BoolValue { get; set; }
+        public string? StringValue { get; set; }
+        public int? IntValue { get; set; }
+        public decimal? DecimalValue { get; set; }
 
         /// <summary>
         /// Type of value representet by token - type lexeme

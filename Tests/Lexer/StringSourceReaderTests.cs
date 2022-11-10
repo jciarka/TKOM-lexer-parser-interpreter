@@ -17,7 +17,6 @@ namespace Tests.Lexer.SourceReaderLayer
             // arrange
             var empty = "";
 
-
             var reader = new StringSourceReader(empty);
 
             // act and assert

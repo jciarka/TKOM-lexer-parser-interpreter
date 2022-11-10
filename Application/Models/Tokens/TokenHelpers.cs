@@ -20,6 +20,7 @@ namespace Application.Models.Tokens
                 .Union(OneCharOperatorsTokenLexems)
                 .Union(TwoCharOperatorsTokenLexems)
                 .Union(KeywordsTokenLexems)
+                .Union(BooleanLiteralTokenLexems)
                 .Union(OtherTokenLexems);
 
         public static IEnumerable<TokenLexeme> ControlCharactersTokenLexems => new TokenLexeme[]
@@ -76,13 +77,18 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.ELSE, Lexeme = "else" },
             new TokenLexeme() { Type = TokenType.VOID, Lexeme = "void" },
             new TokenLexeme() { Type = TokenType.NULL, Lexeme = "null" },
-            new TokenLexeme() { Type = TokenType.TRUE, Lexeme = "true" },
             new TokenLexeme() { Type = TokenType.CHAR, Lexeme = "char" },
             new TokenLexeme() { Type = TokenType.PRINT, Lexeme = "print" },
             new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
-            new TokenLexeme() { Type = TokenType.FALSE, Lexeme = "false" },
             new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
             new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "return" },
+            new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "foreach" },
+        };
+
+        public static IEnumerable<TokenLexeme> BooleanLiteralTokenLexems => new TokenLexeme[]
+        {
+            new TokenLexeme() { Type = TokenType.LITERAL, Lexeme = "true" },
+            new TokenLexeme() { Type = TokenType.LITERAL, Lexeme = "false" },
         };
 
         public static IEnumerable<TokenLexeme> TypeTokenLexems => new TokenLexeme[]
@@ -91,11 +97,9 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.INT, Lexeme = "int" },
             new TokenLexeme() { Type = TokenType.VOID, Lexeme = "void" },
             new TokenLexeme() { Type = TokenType.NULL, Lexeme = "null" },
-            new TokenLexeme() { Type = TokenType.TRUE, Lexeme = "true" },
             new TokenLexeme() { Type = TokenType.CHAR, Lexeme = "char" },
             new TokenLexeme() { Type = TokenType.PRINT, Lexeme = "print" },
             new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
-            new TokenLexeme() { Type = TokenType.FALSE, Lexeme = "false" },
             new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
             new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "return" },
         };

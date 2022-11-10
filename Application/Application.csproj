@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="Infrastructure\Interpreter\" />
-    <Folder Include="Infrastructure\Parser\" />
   </ItemGroup>
 
   <ItemGroup>
