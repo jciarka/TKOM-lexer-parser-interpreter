@@ -1,8 +1,9 @@
 ﻿using Application.Infrastructure.Helpers;
 using Application.Infrastructure.Lekser.Helpers;
 using Application.Infrastructure.Lekser.SourceReaders;
-using Application.Infrastructure.Lexer.Exceptions;
+
 using Application.Models;
+using Application.Models.Lexer.Exceptions;
 using Application.Models.Tokens;
 using Application.Models.Types;
 using System;

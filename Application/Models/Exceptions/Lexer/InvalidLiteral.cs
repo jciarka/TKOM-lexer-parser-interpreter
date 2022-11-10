@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Infrastructure.Lexer.Exceptions
+namespace Application.Models.Lexer.Exceptions
 {
     public class InvalidLiteralException : LexerException
     {

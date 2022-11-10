@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Folder Include="Infrastructure\Interpreter\" />
+    <Folder Include="TestFiles\" />
   </ItemGroup>
 
   <ItemGroup>
