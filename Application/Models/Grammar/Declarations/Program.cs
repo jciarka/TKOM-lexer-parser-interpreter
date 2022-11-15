@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class Program : GrammarRuleBase
+    public class ProgramRoot : GrammarRuleBase
     {
-        public IEnumerable<FuntionDecl> FunctionDeclaration { get; private set; }
+        public IEnumerable<FunctionDecl> FunctionDeclaration { get; private set; }
 
-        public Program(IEnumerable<FuntionDecl> functionDeclaration)
+        public ProgramRoot(IEnumerable<FunctionDecl> functionDeclaration)
         {
             FunctionDeclaration = functionDeclaration;
         }
