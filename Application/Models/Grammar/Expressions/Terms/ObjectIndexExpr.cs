@@ -1,0 +1,18 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Application.Models.Grammar
+{
+    public class ObjectIndexExpr : ExpressionBase
+    {
+        public ExpressionBase IndexExpression { get; }
+
+        public ObjectIndexExpr(ExpressionBase indexExpression)
+        {
+            IndexExpression = indexExpression;
+        }
+    }
+}
