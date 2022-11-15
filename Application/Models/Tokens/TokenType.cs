@@ -45,7 +45,7 @@ namespace Application.Models.Tokens
         LITERAL,
 
         // Keywords.
-        AND,
+        IN,
         OR,
         IF,
         ELSE,
@@ -65,6 +65,8 @@ namespace Application.Models.Tokens
         TYPE,
         COMMENT,
         IDENTIFIER,
-        EOF
+        EOF,
+        LAMBDA,
+        AND
     }
 }

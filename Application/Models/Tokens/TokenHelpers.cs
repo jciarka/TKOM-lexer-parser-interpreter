@@ -71,6 +71,7 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.OR, Lexeme = "or" },
             new TokenLexeme() { Type = TokenType.IF, Lexeme = "if" },
             new TokenLexeme() { Type = TokenType.TO, Lexeme = "to" },
+            new TokenLexeme() { Type = TokenType.IN, Lexeme = "in" },
             new TokenLexeme() { Type = TokenType.AND, Lexeme = "and" },
             new TokenLexeme() { Type = TokenType.VAR, Lexeme = "var" },
             new TokenLexeme() { Type = TokenType.INT, Lexeme = "int" },
@@ -82,7 +83,8 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
             new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
             new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "return" },
-            new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "foreach" },
+            new TokenLexeme() { Type = TokenType.LAMBDA, Lexeme = "lambda" },
+            new TokenLexeme() { Type = TokenType.FOREACH, Lexeme = "foreach" },
         };
 
         public static IEnumerable<TokenLexeme> BooleanLiteralTokenLexems => new TokenLexeme[]
@@ -101,7 +103,6 @@ namespace Application.Models.Tokens
             new TokenLexeme() { Type = TokenType.PRINT, Lexeme = "print" },
             new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
             new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
-            new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "return" },
         };
 
         public static IEnumerable<TokenLexeme> OtherTokenLexems => new TokenLexeme[]
