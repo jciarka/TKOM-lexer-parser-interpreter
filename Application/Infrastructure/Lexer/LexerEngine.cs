@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Lekser
 {
-    public class LexerEngine : ILexer
+    public class LexerEngine : ILexer, IDisposable
     {
         private readonly ISourceReader _reader;
         private readonly LinkedList<Token> _waiting;
@@ -593,6 +593,11 @@ namespace Application.Infrastructure.Lekser
                 LinePosition = _reader.LinePosition,
                 Position = _reader.Position,
             };
+        }
+
+        public void Dispose()
+        {
+            _reader.Dispose();
         }
     }
 }

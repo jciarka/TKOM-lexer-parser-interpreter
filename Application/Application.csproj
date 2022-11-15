@@ -9,7 +9,17 @@
 
   <ItemGroup>
     <Folder Include="Infrastructure\Interpreter\" />
-    <Folder Include="TestFiles\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TestFiles\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="TestFiles\CurrencyConfguration_Errors.txt" />
+    <None Remove="TestFiles\Source_Ok.txt" />
   </ItemGroup>
 
   <ItemGroup>

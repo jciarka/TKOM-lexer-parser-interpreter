@@ -2,7 +2,7 @@
 
 namespace Application.Infrastructure.Lekser
 {
-    public interface ILexer
+    public interface ILexer : IDisposable
     {
         Token Future(int index);
         Token Peek();
