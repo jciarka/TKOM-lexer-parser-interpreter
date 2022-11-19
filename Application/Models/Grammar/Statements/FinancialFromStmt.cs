@@ -8,9 +8,9 @@ namespace Application.Models.Grammar
         public TokenType Operator { get; }
         public ExpressionBase AccountFromExpression { get; }
         public ExpressionBase ValueExpression { get; }
-        public ExpressionBase AccountToExpression { get; }
+        public ExpressionBase? AccountToExpression { get; }
 
-        public FinancialFromStmt(ExpressionBase accountFromExpression, TokenType @operator, ExpressionBase valueExpression, ExpressionBase accountToExpression)
+        public FinancialFromStmt(ExpressionBase accountFromExpression, TokenType @operator, ExpressionBase valueExpression, ExpressionBase? accountToExpression = null)
         {
             AccountFromExpression = accountFromExpression;
             Operator = @operator;

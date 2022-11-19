@@ -6,14 +6,16 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ObjectMethodExpr : ExpressionBase
+    public class ObjectMethodExpr : ObjectExprBase
     {
-        public Identifier Identifier { get; }
+        public ExpressionBase Object { get; set; }
+        public string Method { get; }
         public IEnumerable<ArgumentBase> Arguments { get; }
 
-        public ObjectMethodExpr(Identifier identifier, IEnumerable<ArgumentBase> arguments)
+        public ObjectMethodExpr(ExpressionBase @object, string method, IEnumerable<ArgumentBase> arguments)
         {
-            Identifier = identifier;
+            Object = @object;
+            Method = method;
             Arguments = arguments;
         }
     }

@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class DeclarationStmt
+    public class DeclarationStmt : StatementBase
     {
         public string? Type { get; }
         public Identifier Identifier { get; }
-        public ExpressionBase Expression { get; }
+        public ExpressionBase? Expression { get; }
 
-        public DeclarationStmt(Identifier identifier, ExpressionBase expression, string? type = null)
+        public DeclarationStmt(Identifier identifier, ExpressionBase? expression = null, string? type = null)
         {
             Type = type;
             Identifier = identifier;

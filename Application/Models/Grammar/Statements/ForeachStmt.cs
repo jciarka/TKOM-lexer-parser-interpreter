@@ -8,15 +8,13 @@ namespace Application.Models.Grammar
 {
     public class ForeachStmt : StatementBase
     {
-        public string? Type { get; }
-        public Identifier Identifier { get; }
+        public Parameter Parameter { get; }
         public ExpressionBase CollectionExpression { get; }
         public StatementBase Statement { get; }
 
-        public ForeachStmt(StatementBase statement, Identifier identifier, ExpressionBase collectionExpression, string? type = null)
+        public ForeachStmt(Parameter parameter, ExpressionBase collectionExpression, StatementBase statement)
         {
-            Type = type;
-            Identifier = identifier;
+            Parameter = parameter;
             CollectionExpression = collectionExpression;
             Statement = statement;
         }

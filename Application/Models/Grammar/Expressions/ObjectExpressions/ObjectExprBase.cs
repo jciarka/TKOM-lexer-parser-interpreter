@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ObjectExprBase : ExpressionBase
+    public abstract class ObjectExprBase : ExpressionBase
     {
     }
 }

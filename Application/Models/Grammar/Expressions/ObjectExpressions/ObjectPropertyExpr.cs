@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ObjectPropertyExpr : ExpressionBase
+    public class ObjectPropertyExpr : ObjectExprBase
     {
-        public Identifier Identifier { get; }
+        public ExpressionBase Object { get; set; }
+        public string Property { get; }
 
-        public ObjectPropertyExpr(Identifier identifier)
+        public ObjectPropertyExpr(ExpressionBase @object, string property)
         {
-            Identifier = identifier;
+            Object = @object;
+            Property = property;
         }
     }
 }

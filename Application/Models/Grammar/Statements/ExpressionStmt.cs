@@ -4,13 +4,11 @@ namespace Application.Models.Grammar
 {
     public class ExpressionStmt : StatementBase
     {
-        public ExpressionBase? LeftExpression { get; }
         public ExpressionBase RightExpression { get; }
 
-        public ExpressionStmt(ExpressionBase rValue, ExpressionBase? lValue = null)
+        public ExpressionStmt(ExpressionBase rValue)
         {
             RightExpression = rValue;
-            LeftExpression = lValue;
         }
     }
 }
