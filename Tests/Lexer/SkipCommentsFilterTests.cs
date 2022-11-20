@@ -21,7 +21,7 @@ namespace Tests.Lexer
             _lexerMock = new Mock<ILexer>();
         }
 
-        [Theory]
+        [Theory] // test
         [MemberData(nameof(prepareDataForShouldSkipCommentAtSource))]
         public void ShouldSkipCommentAtSource(Token[] tokens, TokenType[] tokenTypes)
         {
