@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.ConfigurationParser;
 using Application.Infrastructure.Lekser;
 using Application.Infrastructure.Lekser.SourceReaders;
+using Application.Infrastructure.Lexer;
 using Application.Infrastructure.Presenters;
 using Application.Models.Tokens;
 using System;
@@ -20,6 +21,29 @@ namespace Application.Examples
 
             using (var lexer = new LexerEngine(new FileSourceReader(path),
                  new LexerOptions { TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" }) }))
+            {
+                TokenPresenter presenter = new TokenPresenter();
+
+                while (lexer.Peek().Type != TokenType.EOF)
+                {
+                    presenter.PresentToken(lexer.Read());
+                }
+            }
+        }
+
+        public static void ExampleWithSourceOkAndCommentFilter_File()
+        {
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_Ok.txt");
+
+            using (var lexer = new SkipCommentsFilter(
+                    new LexerEngine(
+                         new FileSourceReader(path),
+                         new LexerOptions
+                         {
+                             TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                         }
+                    ))
+                )
             {
                 TokenPresenter presenter = new TokenPresenter();
 

@@ -12,5 +12,6 @@ using System.Reflection;
 //LexerTestScenarios.ExampleWithConfigurationErrors_String();
 
 LexerTestScenarios.ExampleWithSourceOk_File();
-// LexerTestScenarios.ExampleWithSourceOk_String();
+//LexerTestScenarios.ExampleWithSourceOkAndCommentFilter_File();
+//LexerTestScenarios.ExampleWithSourceOk_String();
 
