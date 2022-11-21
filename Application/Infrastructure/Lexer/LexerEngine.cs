@@ -20,6 +20,8 @@ namespace Application.Infrastructure.Lekser
         private readonly LexerOptions _options;
         private CharacterPosition _currentPosition;
 
+        public Token Current { get; private set; }
+
 #pragma warning disable CS8618 // Current assigned inside advance generates null assignement warning
 
         public LexerEngine(ISourceReader reader, LexerOptions? options = null)
@@ -33,7 +35,6 @@ namespace Application.Infrastructure.Lekser
 
 #pragma warning restore CS8618 // Current assigned inside advance
 
-        public Token Current { get; private set; }
 
         public bool Advance()
         {
@@ -46,38 +47,17 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            if (tryBuildControlCharacterToken())
-            {
-                return true;
-            }
-
-            if (tryBuildOperatorToken())
-            {
-                return true;
-            }
-
-            if (tryBuildComment())
-            {
-                return true;
-            }
-
-            if (tryBuildStringLiteralToken())
-            {
-                return true;
-            }
-
-            if (tryBuildNumericLiteralToken())
-            {
-                return true;
-            }
-
-            if (tryBuildAlphaNumericToken())
+            if (tryBuildControlCharacterToken() ||
+                tryBuildOperatorToken() ||
+                tryBuildComment() ||
+                tryBuildStringLiteralToken() ||
+                tryBuildNumericLiteralToken() ||
+                tryBuildAlphaNumericToken())
             {
                 return true;
             }
 
             var letter = _reader.Current;
-
             _reader.Advance();
 
             throw new UnexpectedCharacterException(letter, _currentPosition);
