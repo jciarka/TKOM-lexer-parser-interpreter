@@ -2,7 +2,7 @@
 
 namespace Application.Infrastructure.Lekser
 {
-    public interface ILexer : IDisposable
+    public interface ILexer
     {
         Token Current { get; }
         bool Advance();

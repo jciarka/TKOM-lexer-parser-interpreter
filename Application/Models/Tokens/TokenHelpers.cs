@@ -1,113 +1,97 @@
 ﻿using Application.Infrastructure.Lekser.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Models.Tokens
 {
-    public class TokenLexeme
-    {
-        public TokenType Type { get; set; }
-        public string? Lexeme { get; set; }
-    }
-
     public class TokenHelpers
     {
-        public static IEnumerable<TokenLexeme> TokenLexems =>
-            ControlCharactersTokenLexems
-                .Union(OneCharOperatorsTokenLexems)
-                .Union(TwoCharOperatorsTokenLexems)
-                .Union(KeywordsTokenLexems)
-                .Union(BooleanLiteralTokenLexems)
-                .Union(OtherTokenLexems);
+        public static IDictionary<string, TokenType> AllMap =>
+            ControlCharactersMap.ToDictionary(x => x.Key.ToString(), x => x.Value)
+                .Union(OneCharacterOperatorsMap.ToDictionary(x => x.Key.ToString(), x => x.Value))
+                .Union(TwoCharactersOperatorsMap.ToDictionary(x => new string(new char[] { x.Key.Item1, x.Key.Item2 }), x => x.Value))
+                .Union(KeywordsMap)
+                .Union(BooleanLiteralMap)
+                .Union(OtherMap)
+                .ToDictionary(x => x.Key, x => x.Value);
 
-        public static IEnumerable<TokenLexeme> ControlCharactersTokenLexems => new TokenLexeme[]
+        public static IDictionary<char, TokenType> ControlCharactersMap => new Dictionary<char, TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.LEFT_PAREN, Lexeme = "(" },
-            new TokenLexeme() { Type = TokenType.RIGHT_PAREN, Lexeme = ")" },
-            new TokenLexeme() { Type = TokenType.LEFT_BRACKET, Lexeme = "[" },
-            new TokenLexeme() { Type = TokenType.RIGHT_BRACKET, Lexeme = "]" },
-            new TokenLexeme() { Type = TokenType.LEFT_BRACE, Lexeme = "{" },
-            new TokenLexeme() { Type = TokenType.RIGHT_BRACE, Lexeme = "}" },
-            new TokenLexeme() { Type = TokenType.COMMA, Lexeme = "," },
-            new TokenLexeme() { Type = TokenType.DOT, Lexeme = "." },
-            new TokenLexeme() { Type = TokenType.SEMICOLON, Lexeme = ";" },
+            { '(', TokenType.LEFT_PAREN },
+            { ')', TokenType.RIGHT_PAREN },
+            { '[', TokenType.LEFT_BRACKET },
+            { ']', TokenType.RIGHT_BRACKET },
+            { '{', TokenType.LEFT_BRACE },
+            { '}', TokenType.RIGHT_BRACE },
+            { ',', TokenType.COMMA },
+            { '.', TokenType.DOT },
+            { ';', TokenType.SEMICOLON },
         };
 
-        public static IEnumerable<TokenLexeme> OneCharOperatorsTokenLexems => new TokenLexeme[]
+        public static IDictionary<char, TokenType> OneCharacterOperatorsMap => new Dictionary<char, TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.MINUS, Lexeme =  "-" },
-            new TokenLexeme() { Type = TokenType.PLUS, Lexeme =  "+" },
-            new TokenLexeme() { Type = TokenType.SLASH, Lexeme =  "/" },
-            new TokenLexeme() { Type = TokenType.STAR, Lexeme =  "*" },
-            new TokenLexeme() { Type = TokenType.BANG, Lexeme = "!" },
-            new TokenLexeme() { Type = TokenType.EQUAL, Lexeme =  "=" },
-            new TokenLexeme() { Type = TokenType.GREATER, Lexeme = ">" },
-            new TokenLexeme() { Type = TokenType.LESS, Lexeme = "<" },
-            new TokenLexeme() { Type = TokenType.PRCT_OF, Lexeme = "%" },
+            { '-', TokenType.MINUS},
+            { '+', TokenType.PLUS},
+            { '/', TokenType.SLASH},
+            { '*', TokenType.STAR},
+            { '!',  TokenType.BANG},
+            { '=', TokenType.EQUAL},
+            { '>', TokenType.GREATER},
+            { '<', TokenType.LESS},
+            { '%', TokenType.PRCT_OF},
         };
 
-        public static IEnumerable<TokenLexeme> TwoCharOperatorsTokenLexems => new TokenLexeme[]
+        public static IDictionary<(char, char), TokenType> TwoCharactersOperatorsMap => new Dictionary<(char, char), TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.BANG_EQUAL, Lexeme = "!=" },
-            new TokenLexeme() { Type = TokenType.EQUAL_EQUAL,Lexeme =  "==" },
-            new TokenLexeme() { Type = TokenType.GREATER_EQUAL, Lexeme = ">=" },
-            new TokenLexeme() { Type = TokenType.LESS_EQUAL, Lexeme = "<=" },
-            new TokenLexeme() { Type = TokenType.TRANSFER_FROM, Lexeme = ">>" },
-            new TokenLexeme() { Type = TokenType.TRANSFER_TO, Lexeme = "<<" },
-            new TokenLexeme() { Type = TokenType.TRANSFER_PRCT_FROM, Lexeme = "%>" },
-            new TokenLexeme() { Type = TokenType.TRANSFER_PRCT_TO, Lexeme = "<%" },
-            new TokenLexeme() { Type = TokenType.ARROW, Lexeme = "=>" },
+            { ('!', '='), TokenType.BANG_EQUAL },
+            { ('=', '='), TokenType.EQUAL_EQUAL },
+            { ('>', '='), TokenType.GREATER_EQUAL },
+            { ('<', '='), TokenType.LESS_EQUAL },
+            { ('>', '>'), TokenType.TRANSFER_FROM },
+            { ('<', '<'), TokenType.TRANSFER_TO },
+            { ('%', '>'), TokenType.TRANSFER_PRCT_FROM },
+            { ('<', '%'), TokenType.TRANSFER_PRCT_TO },
+            { ('=', '>'), TokenType.ARROW },
         };
 
-        public static IEnumerable<TokenLexeme> OperatorsTokenLexems =>
-            OneCharOperatorsTokenLexems.Union(TwoCharOperatorsTokenLexems);
-
-
-        public static IEnumerable<TokenLexeme> KeywordsTokenLexems => new TokenLexeme[]
+        public static IDictionary<string, TokenType> KeywordsMap => new Dictionary<string, TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.OR, Lexeme = "or" },
-            new TokenLexeme() { Type = TokenType.IF, Lexeme = "if" },
-            new TokenLexeme() { Type = TokenType.TO, Lexeme = "to" },
-            new TokenLexeme() { Type = TokenType.IN, Lexeme = "in" },
-            new TokenLexeme() { Type = TokenType.AND, Lexeme = "and" },
-            new TokenLexeme() { Type = TokenType.VAR, Lexeme = "var" },
-            new TokenLexeme() { Type = TokenType.INT, Lexeme = "int" },
-            new TokenLexeme() { Type = TokenType.ELSE, Lexeme = "else" },
-            new TokenLexeme() { Type = TokenType.VOID, Lexeme = "void" },
-            new TokenLexeme() { Type = TokenType.NULL, Lexeme = "null" },
-            new TokenLexeme() { Type = TokenType.CHAR, Lexeme = "char" },
-            new TokenLexeme() { Type = TokenType.PRINT, Lexeme = "print" },
-            new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
-            new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
-            new TokenLexeme() { Type = TokenType.RETURN, Lexeme = "return" },
-            new TokenLexeme() { Type = TokenType.LAMBDA, Lexeme = "lambda" },
-            new TokenLexeme() { Type = TokenType.FOREACH, Lexeme = "foreach" },
+            { "or", TokenType.OR },
+            { "if", TokenType.IF },
+            { "to",TokenType.TO },
+            {"in" ,TokenType.IN },
+            { "and", TokenType.AND },
+            { "var", TokenType.VAR },
+            { "int", TokenType.INT },
+            { "else", TokenType.ELSE },
+            { "void", TokenType.VOID },
+            { "null", TokenType.NULL },
+            { "char",TokenType.CHAR },
+            { "print", TokenType.PRINT },
+            { "while", TokenType.WHILE },
+            { "double", TokenType.DOUBLE },
+            { "return", TokenType.RETURN },
+            { "lambda", TokenType.LAMBDA },
+            { "foreach", TokenType.FOREACH },
         };
 
-        public static IEnumerable<TokenLexeme> BooleanLiteralTokenLexems => new TokenLexeme[]
+        public static IDictionary<string, TokenType> BooleanLiteralMap => new Dictionary<string, TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.LITERAL, Lexeme = "true" },
-            new TokenLexeme() { Type = TokenType.LITERAL, Lexeme = "false" },
+            { "true", TokenType.LITERAL },
+            { "false", TokenType.LITERAL },
         };
 
-        public static IEnumerable<TokenLexeme> TypeTokenLexems => new TokenLexeme[]
+        public static IDictionary<string, TokenType> TypeMap => new Dictionary<string, TokenType>()
         {
-            // IMPORTATNT - tokens must be listed in ascending length order!
-            new TokenLexeme() { Type = TokenType.INT, Lexeme = "int" },
-            new TokenLexeme() { Type = TokenType.VOID, Lexeme = "void" },
-            new TokenLexeme() { Type = TokenType.NULL, Lexeme = "null" },
-            new TokenLexeme() { Type = TokenType.CHAR, Lexeme = "char" },
-            new TokenLexeme() { Type = TokenType.PRINT, Lexeme = "print" },
-            new TokenLexeme() { Type = TokenType.WHILE, Lexeme = "while" },
-            new TokenLexeme() { Type = TokenType.DOUBLE, Lexeme = "double" },
+            { "int", TokenType.INT },
+            { "void" , TokenType.VOID },
+            { "null" , TokenType.NULL },
+            { "char", TokenType.CHAR  },
+            { "while", TokenType.WHILE  },
+            { "double", TokenType.DOUBLE  },
         };
 
-        public static IEnumerable<TokenLexeme> OtherTokenLexems => new TokenLexeme[]
+        public static IDictionary<string, TokenType> OtherMap => new Dictionary<string, TokenType>()
         {
-            new TokenLexeme() { Type = TokenType.EOF, Lexeme = CharactersHelpers.EOF.ToString() }
+            { CharactersHelpers.EOF.ToString(), TokenType.EOF }
         };
     }
 }

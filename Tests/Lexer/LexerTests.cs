@@ -263,6 +263,6 @@ namespace Tests.Lexer
         }
 
         private static IEnumerable<object[]> getFixedTextTokenLexems() =>
-            TokenHelpers.TokenLexems.Select(x => new object[] { x.Lexeme!, x.Type! });
+            TokenHelpers.AllMap.Select(x => new object[] { x.Key, x.Value });
     }
 }

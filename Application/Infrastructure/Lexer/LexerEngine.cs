@@ -14,10 +14,11 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Lekser
 {
-    public class LexerEngine : ILexer, IDisposable
+    public class LexerEngine : ILexer
     {
         private readonly ISourceReader _reader;
         private readonly LexerOptions _options;
+        private CharacterPosition _currentPosition;
 
 #pragma warning disable CS8618 // Current assigned inside advance generates null assignement warning
 
@@ -25,6 +26,7 @@ namespace Application.Infrastructure.Lekser
         {
             _options = options ?? new LexerOptions();
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+            _currentPosition = getCharacterPositionDetails();
 
             Advance(); // load first token to current
         }
@@ -36,6 +38,8 @@ namespace Application.Infrastructure.Lekser
         public bool Advance()
         {
             skipWhiteSpaces();
+
+            _currentPosition = getCharacterPositionDetails();
 
             if (tryBuildEof())
             {
@@ -72,21 +76,18 @@ namespace Application.Infrastructure.Lekser
                 return true;
             }
 
-            var position = getCharacterPositionDetails();
             var letter = _reader.Current;
+
             _reader.Advance();
 
-            throw new UnexpectedCharacterException(letter, position);
+            throw new UnexpectedCharacterException(letter, _currentPosition);
         }
 
         private void skipWhiteSpaces()
         {
-            char next = _reader.Current;
-
-            while (char.IsWhiteSpace(next) || next.Equals(CharactersHelpers.NL))
+            while (char.IsWhiteSpace(_reader.Current) || _reader.Current.Equals(CharactersHelpers.NL))
             {
                 _reader.Advance();
-                next = _reader.Current;
             }
         }
 
@@ -95,24 +96,19 @@ namespace Application.Infrastructure.Lekser
         /// </summary>
         private bool tryBuildControlCharacterToken()
         {
-            var first = _reader.Current;
-            var match = TokenHelpers.ControlCharactersTokenLexems
-                .Where(x => x.Lexeme!.Equals(first.ToString()));
-
-            if (!match.Any())
+            if (!TokenHelpers.ControlCharactersMap.ContainsKey(_reader.Current))
             {
                 return false;
             }
 
-            _reader.Advance();
-            var lexemeInfo = match.First();
-
             Current = new Token()
             {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = getCharacterPositionDetails(),
+                Lexeme = _reader.Current.ToString(),
+                Type = TokenHelpers.ControlCharactersMap[_reader.Current],
+                Position = _currentPosition,
             };
+
+            _reader.Advance();
 
             return true;
         }
@@ -123,39 +119,34 @@ namespace Application.Infrastructure.Lekser
         private bool tryBuildOperatorToken()
         {
             var first = _reader.Current;
-            var match = TokenHelpers.OperatorsTokenLexems
-                .Where(x => x.Lexeme!.First().Equals(first));
 
-            if (!match.Any())
+            if (!TokenHelpers.OneCharacterOperatorsMap.ContainsKey(first))
             {
                 return false;
             }
 
-            CharacterPosition tokenPosition = getCharacterPositionDetails();
             _reader.Advance();
-            var second = _reader.Current;
 
-            var twoCharMatch = TokenHelpers.TwoCharOperatorsTokenLexems
-                .Where(x => x.Lexeme!.Length == 2 && x.Lexeme[0].Equals(first) && x.Lexeme![1].Equals(second));
-
-            TokenLexeme lexemeInfo;
-
-            if (twoCharMatch.Any())
+            if (!TokenHelpers.TwoCharactersOperatorsMap.ContainsKey((first, _reader.Current)))
             {
-                lexemeInfo = twoCharMatch.First();
-                _reader.Advance();
+                Current = new Token()
+                {
+                    Lexeme = first.ToString(),
+                    Type = TokenHelpers.OneCharacterOperatorsMap[first],
+                    Position = _currentPosition,
+                };
             }
             else
             {
-                lexemeInfo = match.First();
-            }
+                Current = new Token()
+                {
+                    Lexeme = new string(new char[] { first, _reader.Current }),
+                    Type = TokenHelpers.TwoCharactersOperatorsMap[(first, _reader.Current)],
+                    Position = _currentPosition,
+                };
 
-            Current = new Token()
-            {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = tokenPosition,
-            };
+                _reader.Advance();
+            }
 
             return true;
         }
@@ -172,7 +163,6 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            CharacterPosition tokenPosition = getCharacterPositionDetails();
             var commentBuilder = new StringBuilder();
 
             while (!letter.Equals(CharactersHelpers.NL) && !letter.Equals(CharactersHelpers.EOF))
@@ -185,7 +175,7 @@ namespace Application.Infrastructure.Lekser
             Current = new Token()
             {
                 Type = TokenType.COMMENT,
-                Position = tokenPosition,
+                Position = _currentPosition,
                 Lexeme = commentBuilder.ToString(),
             };
 
@@ -206,8 +196,6 @@ namespace Application.Infrastructure.Lekser
 
             var stringBuilder = new StringBuilder();
             var numberBuilder = new NumberBuilder();
-
-            var tokenPosition = getCharacterPositionDetails();
 
             // build number part
             buildNumericPartOfNumber(stringBuilder, numberBuilder);
@@ -231,7 +219,7 @@ namespace Application.Infrastructure.Lekser
                 {
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
-                    Position = tokenPosition,
+                    Position = _currentPosition,
                     IntValue = numberBuilder.ToInteger(),
                     ValueType = finalType
                 };
@@ -242,7 +230,7 @@ namespace Application.Infrastructure.Lekser
                 {
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
-                    Position = tokenPosition,
+                    Position = _currentPosition,
                     DecimalValue = numberBuilder.ToDecimal(),
                     ValueType = finalType
                 };
@@ -351,7 +339,7 @@ namespace Application.Infrastructure.Lekser
                 Type = TokenType.LITERAL,
                 StringValue = literalBuilder.ToString(),
                 ValueType = "string",
-                Position = getCharacterPositionDetails(),
+                Position = _currentPosition,
             };
 
             return true;
@@ -367,7 +355,6 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            var tokenPosition = getCharacterPositionDetails();
             var builder = new StringBuilder();
 
             // grab next charaters while are letters
@@ -384,26 +371,26 @@ namespace Application.Infrastructure.Lekser
 
             var lexeme = builder.ToString();
 
-            if (tryMatchKeywordsToken(lexeme, tokenPosition))
+            if (tryMatchKeywordsToken(lexeme))
             {
                 return true;
             }
 
-            if (tryMatchBooleanLiteralToken(lexeme, tokenPosition))
+            if (tryMatchBooleanLiteralToken(lexeme))
             {
                 return true;
             }
 
-            if (tryMatchTypeToken(lexeme, tokenPosition))
+            if (tryMatchTypeToken(lexeme))
             {
                 return true;
             }
 
-            Current = buildIdentifier(lexeme, tokenPosition);
+            Current = buildIdentifier(lexeme);
             return true;
         }
 
-        private bool tryMatchBooleanLiteralToken(string lexeme, CharacterPosition tokenPosition)
+        private bool tryMatchBooleanLiteralToken(string lexeme)
         {
             bool? boolValue = null;
             if (lexeme.Equals("true")) boolValue = true;
@@ -420,7 +407,7 @@ namespace Application.Infrastructure.Lekser
                 ValueType = "bool",
                 BoolValue = boolValue,
                 Lexeme = lexeme,
-                Position = tokenPosition,
+                Position = _currentPosition,
             };
 
             return true;
@@ -436,34 +423,30 @@ namespace Application.Infrastructure.Lekser
             Current = new Token
             {
                 Type = TokenType.EOF,
-                Position = getCharacterPositionDetails(),
+                Position = _currentPosition,
             };
 
             return true;
         }
 
-        private bool tryMatchKeywordsToken(string lexeme, CharacterPosition tokenPosition)
+        private bool tryMatchKeywordsToken(string lexeme)
         {
-            var match = TokenHelpers.KeywordsTokenLexems.Where(x => x.Lexeme!.Equals(lexeme));
-
-            if (!match.Any())
+            if (!TokenHelpers.KeywordsMap.ContainsKey(lexeme))
             {
                 return false;
             }
 
-            var lexemeInfo = match.First();
-
             Current = new Token()
             {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = tokenPosition,
+                Lexeme = lexeme,
+                Type = TokenHelpers.KeywordsMap[lexeme],
+                Position = _currentPosition,
             };
 
             return true;
         }
 
-        private bool tryMatchTypeToken(string lexeme, CharacterPosition tokenPosition)
+        private bool tryMatchTypeToken(string lexeme)
         {
             var match = _options.TypesInfo!.Types.Where(x => x.Lexeme!.Equals(lexeme));
 
@@ -478,20 +461,20 @@ namespace Application.Infrastructure.Lekser
             {
                 Lexeme = typeInfo.Lexeme,
                 Type = TokenType.TYPE,
-                Position = tokenPosition,
+                Position = _currentPosition,
                 StringValue = typeInfo.Lexeme,
             };
 
             return true;
         }
 
-        private Token buildIdentifier(string lexeme, CharacterPosition tokenPosition)
+        private Token buildIdentifier(string lexeme)
         {
             return new Token()
             {
                 Lexeme = lexeme,
                 Type = TokenType.IDENTIFIER,
-                Position = tokenPosition
+                Position = _currentPosition
             };
         }
 
@@ -504,11 +487,6 @@ namespace Application.Infrastructure.Lekser
                 LinePosition = _reader.LinePosition,
                 Position = _reader.Position,
             };
-        }
-
-        public void Dispose()
-        {
-            _reader.Dispose();
         }
     }
 }

@@ -34,10 +34,5 @@ namespace Application.Infrastructure.Lexer
 
             return true;
         }
-
-        public void Dispose()
-        {
-            _lexer.Dispose();
-        }
     }
 }
