@@ -17,126 +17,59 @@ namespace Application.Infrastructure.Lekser
     public class LexerEngine : ILexer, IDisposable
     {
         private readonly ISourceReader _reader;
-        private readonly LinkedList<Token> _waiting;
-        private readonly LinkedList<Token> _consumed;
         private readonly LexerOptions _options;
+
+#pragma warning disable CS8618 // Current assigned inside advance generates null assignement warning
 
         public LexerEngine(ISourceReader reader, LexerOptions? options = null)
         {
             _options = options ?? new LexerOptions();
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-            _waiting = new LinkedList<Token>();
-            _consumed = new LinkedList<Token>();
+
+            Advance(); // load first token to current
         }
 
-        public Token Future(int index)
+#pragma warning restore CS8618 // Current assigned inside advance
+
+        public Token Current { get; private set; }
+
+        public bool Advance()
         {
-            if (_waiting.Count() > index)
-            {
-                for (int requiredIndex = _waiting.Count(); requiredIndex <= index; requiredIndex++)
-                {
-                    var next = getNext();
-
-                    _waiting.AddLast(next);
-
-                    if (next.Type == TokenType.EOF)
-                    {
-                        return next;
-                    }
-                }
-            }
-
-            return _waiting.ElementAt(index);
-        }
-
-        public Token Peek()
-        {
-            if (_waiting.Any())
-            {
-                return _waiting.First();
-            }
-
-            var next = getNext();
-
-            _waiting.AddLast(next);
-
-            return next;
-        }
-
-        public Token Read()
-        {
-            if (_waiting.Any())
-            {
-                var next = _waiting.First();
-
-                _waiting.RemoveFirst();
-                _consumed.AddFirst(next);
-
-                return next;
-            }
-
-            return getNext();
-        }
-
-        public Token? Previous()
-        {
-            if (_consumed.Any())
-            {
-                return _consumed.First();
-            }
-
-            return null;
-        }
-
-        public Token? Previous(int index)
-        {
-            if (_consumed.Count() > index)
-            {
-                return _consumed.ElementAt(index);
-            }
-
-            return null;
-        }
-
-        private Token getNext()
-        {
-            Token? token = null;
-
             skipWhiteSpaces();
 
-            if (tryBuildEof(out token))
+            if (tryBuildEof())
             {
-                return token!;
+                return false;
             }
 
-            if (tryBuildControlCharacterToken(out token))
+            if (tryBuildControlCharacterToken())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildOperatorToken(out token))
+            if (tryBuildOperatorToken())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildComment(out token))
+            if (tryBuildComment())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildStringLiteralToken(out token))
+            if (tryBuildStringLiteralToken())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildNumericLiteralToken(out token))
+            if (tryBuildNumericLiteralToken())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildAlphaNumericToken(out token))
+            if (tryBuildAlphaNumericToken())
             {
-                return token!;
+                return true;
             }
 
             var position = getCharacterPositionDetails();
@@ -160,10 +93,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds one character tokens
         /// </summary>
-        private bool tryBuildControlCharacterToken(out Token? token)
+        private bool tryBuildControlCharacterToken()
         {
-            token = null;
-
             var first = _reader.Current;
             var match = TokenHelpers.ControlCharactersTokenLexems
                 .Where(x => x.Lexeme!.Equals(first.ToString()));
@@ -176,7 +107,7 @@ namespace Application.Infrastructure.Lekser
             _reader.Advance();
             var lexemeInfo = match.First();
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = lexemeInfo.Lexeme,
                 Type = lexemeInfo.Type,
@@ -189,10 +120,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds One or two character tokens build from not alphanumeric characters
         /// </summary>
-        private bool tryBuildOperatorToken(out Token? token)
+        private bool tryBuildOperatorToken()
         {
-            token = null;
-
             var first = _reader.Current;
             var match = TokenHelpers.OperatorsTokenLexems
                 .Where(x => x.Lexeme!.First().Equals(first));
@@ -221,7 +150,7 @@ namespace Application.Infrastructure.Lekser
                 lexemeInfo = match.First();
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = lexemeInfo.Lexeme,
                 Type = lexemeInfo.Type,
@@ -234,9 +163,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds comments (starts with #)
         /// </summary>
-        private bool tryBuildComment(out Token? token)
+        private bool tryBuildComment()
         {
-            token = null;
             var letter = _reader.Current;
 
             if (!letter.Equals('#'))
@@ -254,7 +182,7 @@ namespace Application.Infrastructure.Lekser
                 letter = _reader.Current;
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Type = TokenType.COMMENT,
                 Position = tokenPosition,
@@ -267,10 +195,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds numeric character tokens (must start with digits)
         /// </summary>
-        private bool tryBuildNumericLiteralToken(out Token? token)
+        private bool tryBuildNumericLiteralToken()
         {
-            token = null;
-
             var letter = _reader.Current;
 
             if (!char.IsDigit(letter))
@@ -301,7 +227,7 @@ namespace Application.Infrastructure.Lekser
 
             if (finalRepresentation == TypeEnum.INT)
             {
-                token = new Token()
+                Current = new Token()
                 {
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
@@ -312,7 +238,7 @@ namespace Application.Infrastructure.Lekser
             }
             else
             {
-                token = new Token()
+                Current = new Token()
                 {
                     Lexeme = stringBuilder.ToString(),
                     Type = TokenType.LITERAL,
@@ -395,10 +321,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds string literal tokens (must start with ")
         /// </summary>
-        private bool tryBuildStringLiteralToken(out Token? token)
+        private bool tryBuildStringLiteralToken()
         {
-            token = null;
-
             if (_reader.Current != '\"')
             {
                 return false;
@@ -421,7 +345,7 @@ namespace Application.Infrastructure.Lekser
                 }
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = lexemeBuilder.ToString(),
                 Type = TokenType.LITERAL,
@@ -436,10 +360,8 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds tokens that are build only with alphanumeric characters
         /// </summary>
-        private bool tryBuildAlphaNumericToken(out Token? token)
+        private bool tryBuildAlphaNumericToken()
         {
-            token = null;
-
             if (!char.IsLetter(_reader.Current))
             {
                 return false;
@@ -462,29 +384,27 @@ namespace Application.Infrastructure.Lekser
 
             var lexeme = builder.ToString();
 
-            if (tryMatchKeywordsToken(lexeme, tokenPosition, out token))
+            if (tryMatchKeywordsToken(lexeme, tokenPosition))
             {
                 return true;
             }
 
-            if (tryMatchBooleanLiteralToken(lexeme, tokenPosition, out token))
+            if (tryMatchBooleanLiteralToken(lexeme, tokenPosition))
             {
                 return true;
             }
 
-            if (tryMatchTypeToken(lexeme, tokenPosition, out token))
+            if (tryMatchTypeToken(lexeme, tokenPosition))
             {
                 return true;
             }
 
-            token = buildIdentifier(lexeme, tokenPosition);
+            Current = buildIdentifier(lexeme, tokenPosition);
             return true;
         }
 
-        private bool tryMatchBooleanLiteralToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchBooleanLiteralToken(string lexeme, CharacterPosition tokenPosition)
         {
-            token = null;
-
             bool? boolValue = null;
             if (lexeme.Equals("true")) boolValue = true;
             if (lexeme.Equals("false")) boolValue = false;
@@ -494,7 +414,7 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Type = TokenType.LITERAL,
                 ValueType = "bool",
@@ -506,27 +426,24 @@ namespace Application.Infrastructure.Lekser
             return true;
         }
 
-        private bool tryBuildEof(out Token? token)
+        private bool tryBuildEof()
         {
-            token = null;
-
             if (!_reader.Current.Equals(CharactersHelpers.EOF))
             {
                 return false;
             }
 
-            token = new Token
+            Current = new Token
             {
                 Type = TokenType.EOF,
                 Position = getCharacterPositionDetails(),
             };
+
             return true;
         }
 
-        private bool tryMatchKeywordsToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchKeywordsToken(string lexeme, CharacterPosition tokenPosition)
         {
-            token = null;
-
             var match = TokenHelpers.KeywordsTokenLexems.Where(x => x.Lexeme!.Equals(lexeme));
 
             if (!match.Any())
@@ -536,7 +453,7 @@ namespace Application.Infrastructure.Lekser
 
             var lexemeInfo = match.First();
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = lexemeInfo.Lexeme,
                 Type = lexemeInfo.Type,
@@ -546,10 +463,8 @@ namespace Application.Infrastructure.Lekser
             return true;
         }
 
-        private bool tryMatchTypeToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchTypeToken(string lexeme, CharacterPosition tokenPosition)
         {
-            token = null;
-
             var match = _options.TypesInfo!.Types.Where(x => x.Lexeme!.Equals(lexeme));
 
             if (!match.Any())
@@ -559,7 +474,7 @@ namespace Application.Infrastructure.Lekser
 
             var typeInfo = match.First();
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = typeInfo.Lexeme,
                 Type = TokenType.TYPE,
@@ -570,7 +485,7 @@ namespace Application.Infrastructure.Lekser
             return true;
         }
 
-        private Token? buildIdentifier(string lexeme, CharacterPosition tokenPosition)
+        private Token buildIdentifier(string lexeme, CharacterPosition tokenPosition)
         {
             return new Token()
             {

@@ -15,26 +15,24 @@ namespace Application.Infrastructure.Lexer
         public SkipCommentsFilter(ILexer lexer)
         {
             _lexer = lexer;
-        }
 
-        public Token Peek()
-        {
-            Token token = _lexer.Peek();
-
-            while (token.Type == TokenType.COMMENT)
+            if (_lexer.Current.Type == TokenType.COMMENT)
             {
-                _lexer.Read();
-                token = _lexer.Peek();
+                Advance();
             }
-
-            return token;
         }
 
-        public Token Read()
-        {
-            Peek(); // advances if comment
+        public Token Current => _lexer.Current;
 
-            return _lexer.Read();
+        public bool Advance()
+        {
+            do
+            {
+                if (!_lexer.Advance()) return false;
+            }
+            while (_lexer.Current.Type == TokenType.COMMENT);
+
+            return true;
         }
 
         public void Dispose()

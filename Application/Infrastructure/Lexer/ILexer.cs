@@ -4,7 +4,7 @@ namespace Application.Infrastructure.Lekser
 {
     public interface ILexer : IDisposable
     {
-        Token Peek();
-        Token Read();
+        Token Current { get; }
+        bool Advance();
     }
 }

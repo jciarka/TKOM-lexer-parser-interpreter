@@ -28,18 +28,19 @@ namespace Tests.Lexer
             int i = 0;
 
             // arange
-            _lexerMock.Setup(x => x.Read())
-                .Returns(() => i < tokens.Length ? tokens[i] : new Token { Type = TokenType.EOF })
+            _lexerMock.Setup(x => x.Advance())
+                .Returns(() => i < tokens.Length)
                 .Callback(() => i++);
 
-            _lexerMock.Setup(x => x.Peek())
+            _lexerMock.Setup(x => x.Current)
                 .Returns(() => i < tokens.Length ? tokens[i] : new Token { Type = TokenType.EOF });
 
             var lexer = new SkipCommentsFilter(_lexerMock.Object);
 
             foreach (var tokenType in tokenTypes)
             {
-                Assert.Equal(tokenType, lexer.Read().Type);
+                Assert.Equal(tokenType, lexer.Current.Type);
+                lexer.Advance();
             }
         }
 

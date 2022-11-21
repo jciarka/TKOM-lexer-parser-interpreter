@@ -24,10 +24,12 @@ namespace Application.Examples
             {
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
+
             }
         }
 
@@ -47,9 +49,10 @@ namespace Application.Examples
             {
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
         }
@@ -165,9 +168,10 @@ void main()
                 var parser = new ConfigurationParserEngine(lexer);
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
         }
@@ -180,9 +184,10 @@ void main()
             {
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
@@ -223,9 +228,10 @@ void main()
                 var parser = new ConfigurationParserEngine(lexer);
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
@@ -254,9 +260,10 @@ void main()
             {
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
@@ -297,9 +304,10 @@ CNY	 0.14  0.19  0.14  0.12   1.07   0.14   20.37  0.21  11.33     1;
                 var parser = new ConfigurationParserEngine(lexer);
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
