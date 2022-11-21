@@ -33,27 +33,31 @@ namespace Application.Infrastructure.Lekser.SourceReaders
         protected abstract char readFromContent();
         protected abstract long getAtContentPosition();
 
-        public char Peek()
+        public char Current
         {
-            if (isEndOfContent())
-                return CharactersHelpers.EOF;
+            get
+            {
+                if (isEndOfContent())
+                    return CharactersHelpers.EOF;
 
-            if (isNewLine())
-                return CharactersHelpers.NL;
+                if (isNewLine())
+                    return CharactersHelpers.NL;
 
-            return peekFromContent();
+                return peekFromContent();
+            }
         }
 
-        public char Read()
+        public bool Advance()
         {
             if (isEndOfContent())
-                return CharactersHelpers.EOF;
+                return false;
 
             if (trySkipNewLine())
-                return CharactersHelpers.NL;
+                return true;
 
             incrementColumn();
-            return readFromContent();
+            readFromContent();
+            return true;
         }
 
         private bool trySkipNewLine()

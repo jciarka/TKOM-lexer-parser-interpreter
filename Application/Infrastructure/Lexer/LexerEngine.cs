@@ -140,18 +140,20 @@ namespace Application.Infrastructure.Lekser
             }
 
             var position = getCharacterPositionDetails();
-            var letter = _reader.Read();
+            var letter = _reader.Current;
+            _reader.Advance();
+
             throw new UnexpectedCharacterException(letter, position);
         }
 
         private void skipWhiteSpaces()
         {
-            char next = _reader.Peek();
+            char next = _reader.Current;
 
             while (char.IsWhiteSpace(next) || next.Equals(CharactersHelpers.NL))
             {
-                _reader.Read();
-                next = _reader.Peek();
+                _reader.Advance();
+                next = _reader.Current;
             }
         }
 
@@ -162,7 +164,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            var first = _reader.Peek();
+            var first = _reader.Current;
             var match = TokenHelpers.ControlCharactersTokenLexems
                 .Where(x => x.Lexeme!.Equals(first.ToString()));
 
@@ -171,7 +173,7 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            _reader.Read();
+            _reader.Advance();
             var lexemeInfo = match.First();
 
             token = new Token()
@@ -191,7 +193,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            var first = _reader.Peek();
+            var first = _reader.Current;
             var match = TokenHelpers.OperatorsTokenLexems
                 .Where(x => x.Lexeme!.First().Equals(first));
 
@@ -201,8 +203,8 @@ namespace Application.Infrastructure.Lekser
             }
 
             CharacterPosition tokenPosition = getCharacterPositionDetails();
-            _reader.Read();
-            var second = _reader.Peek();
+            _reader.Advance();
+            var second = _reader.Current;
 
             var twoCharMatch = TokenHelpers.TwoCharOperatorsTokenLexems
                 .Where(x => x.Lexeme!.Length == 2 && x.Lexeme[0].Equals(first) && x.Lexeme![1].Equals(second));
@@ -212,7 +214,7 @@ namespace Application.Infrastructure.Lekser
             if (twoCharMatch.Any())
             {
                 lexemeInfo = twoCharMatch.First();
-                _reader.Read();
+                _reader.Advance();
             }
             else
             {
@@ -235,7 +237,7 @@ namespace Application.Infrastructure.Lekser
         private bool tryBuildComment(out Token? token)
         {
             token = null;
-            var letter = _reader.Peek();
+            var letter = _reader.Current;
 
             if (!letter.Equals('#'))
             {
@@ -247,9 +249,9 @@ namespace Application.Infrastructure.Lekser
 
             while (!letter.Equals(CharactersHelpers.NL) && !letter.Equals(CharactersHelpers.EOF))
             {
-                _reader.Read();
+                _reader.Advance();
                 commentBuilder.Append(letter);
-                letter = _reader.Peek();
+                letter = _reader.Current;
             }
 
             token = new Token()
@@ -269,7 +271,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            var letter = _reader.Peek();
+            var letter = _reader.Current;
 
             if (!char.IsDigit(letter))
             {
@@ -287,7 +289,7 @@ namespace Application.Infrastructure.Lekser
             // build type declaration part
             var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
 
-            letter = _reader.Peek();
+            letter = _reader.Current;
 
             if (char.IsLetterOrDigit(letter))
             {
@@ -325,11 +327,9 @@ namespace Application.Infrastructure.Lekser
 
         private void buildNumericPartOfNumber(StringBuilder stringBuilder, NumberBuilder numberBuilder)
         {
-            var letter = _reader.Peek();
-
-            while (char.IsDigit(letter) || _reader.Peek().Equals('.'))
+            while (char.IsDigit(_reader.Current) || _reader.Current.Equals('.'))
             {
-                if (!numberBuilder.tryAppend(letter))
+                if (!numberBuilder.tryAppend(_reader.Current))
                 {
                     if (numberBuilder.State == NumberBuilderState.OVERFLOWED)
                     {
@@ -341,31 +341,28 @@ namespace Application.Infrastructure.Lekser
                     }
                 }
 
-                _reader.Read();
-                stringBuilder.Append(letter);
-
-                letter = _reader.Peek();
+                stringBuilder.Append(_reader.Current);
+                _reader.Advance();
             }
         }
 
         private TypeEnum? buildTypeDeclarationPartOfNumber(StringBuilder builder, out string? typeLexem)
         {
-            char letter = _reader.Peek();
-
             // type EMPTY
-            if (!char.IsLetter(letter))
+            if (!char.IsLetter(_reader.Current))
             {
                 typeLexem = null;
                 return null;
             }
 
             // type DECIMAL
-            if (letter.Equals('D') || letter.Equals('d'))
+            if (_reader.Current.Equals('D') || _reader.Current.Equals('d'))
             {
-                letter = _reader.Read();
-                builder.Append(letter);
 
+                builder.Append(_reader.Current);
                 typeLexem = "decimal";
+
+                _reader.Advance();
 
                 return TypeEnum.DECIMAL;
             }
@@ -373,13 +370,13 @@ namespace Application.Infrastructure.Lekser
             // type EXTERNAL
             var typeBuilder = new StringBuilder();
 
-            while (char.IsLetterOrDigit(letter))
+            while (char.IsLetterOrDigit(_reader.Current))
             {
-                _reader.Read();
-                builder.Append(letter);
-                typeBuilder.Append(letter);
 
-                letter = _reader.Peek();
+                builder.Append(_reader.Current);
+                typeBuilder.Append(_reader.Current);
+
+                _reader.Advance();
             }
 
             var match = _options.TypesInfo!.ExternalTypes.Where(x => x.Lexeme!.Equals(typeBuilder.ToString()));
@@ -402,7 +399,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            if (_reader.Peek() != '\"')
+            if (_reader.Current != '\"')
             {
                 return false;
             }
@@ -412,7 +409,8 @@ namespace Application.Infrastructure.Lekser
 
             while (literalBuilder.State != LiteralBuilderState.VALID)
             {
-                var letter = _reader.Read();
+                var letter = _reader.Current;
+                _reader.Advance();
 
                 lexemeBuilder.Append(letter);
                 var result = literalBuilder.tryAppend(letter);
@@ -442,9 +440,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            var letter = _reader.Peek();
-
-            if (!char.IsLetter(letter))
+            if (!char.IsLetter(_reader.Current))
             {
                 return false;
             }
@@ -453,13 +449,13 @@ namespace Application.Infrastructure.Lekser
             var builder = new StringBuilder();
 
             // grab next charaters while are letters
-            while ((char.IsLetterOrDigit(letter) || letter.Equals('_')) && builder.Length < _options.LiteralMaxLength)
+            while ((char.IsLetterOrDigit(_reader.Current) || _reader.Current.Equals('_')) && builder.Length < _options.LiteralMaxLength)
             {
-                builder.Append(_reader.Read());
-                letter = _reader.Peek();
+                builder.Append(_reader.Current);
+                _reader.Advance();
             }
 
-            if (char.IsLetterOrDigit(_reader.Peek()))
+            if (char.IsLetterOrDigit(_reader.Current))
             {
                 throw new TooLongIdentifierException(builder.ToString(), getCharacterPositionDetails());
             }
@@ -514,7 +510,7 @@ namespace Application.Infrastructure.Lekser
         {
             token = null;
 
-            if (!_reader.Peek().Equals(CharactersHelpers.EOF))
+            if (!_reader.Current.Equals(CharactersHelpers.EOF))
             {
                 return false;
             }

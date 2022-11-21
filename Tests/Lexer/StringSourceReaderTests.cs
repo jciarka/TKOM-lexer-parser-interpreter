@@ -23,11 +23,10 @@ namespace Tests.Lexer.SourceReaderLayer
 
             for (int i = 0; i < 5; i++)
             {
-                var peekResult = reader.Peek();
-                var readResult = reader.Read();
+                var peekResult = reader.Current;
+                reader.Advance();
 
                 Assert.Equal(peekResult, CharactersHelpers.EOF);
-                Assert.Equal(readResult, CharactersHelpers.EOF);
             }
         }
 
@@ -40,11 +39,10 @@ namespace Tests.Lexer.SourceReaderLayer
             var reader = new StringSourceReader(empty);
 
             // act and assert
-            var peekResult = reader.Peek();
-            var readResult = reader.Read();
+            var peekResult = reader.Current;
+            reader.Advance();
 
             Assert.Equal(peekResult, CharactersHelpers.NL);
-            Assert.Equal(readResult, CharactersHelpers.NL);
         }
 
         [Fact]
@@ -65,11 +63,10 @@ namespace Tests.Lexer.SourceReaderLayer
 
                 i++;
 
-                var peekResult = reader.Peek();
-                var readResult = reader.Read();
+                var peekResult = reader.Current;
+                reader.Advance();
 
                 Assert.Equal(peekResult, letter);
-                Assert.Equal(readResult, letter);
             }
         }
 
@@ -97,7 +94,7 @@ namespace Tests.Lexer.SourceReaderLayer
                 Assert.Equal(reader.Position, lineNumber * Environment.NewLine.Length);
 
                 lineNumber++;
-                reader.Read();
+                reader.Advance();
             }
         }
 
@@ -132,11 +129,10 @@ namespace Tests.Lexer.SourceReaderLayer
                     Assert.Equal(reader.Line, lineNumber);
                     Assert.Equal(reader.Position, letterNumber++);
 
-                    var peekResult = reader.Peek();
-                    var readResult = reader.Read();
+                    var peekResult = reader.Current;
+                    reader.Advance();
 
                     Assert.Equal(peekResult, letter);
-                    Assert.Equal(readResult, letter);
                 }
 
                 Assert.Equal(reader.Position, letterNumber);
@@ -144,11 +140,10 @@ namespace Tests.Lexer.SourceReaderLayer
                 lineNumber++;
                 letterNumber += Environment.NewLine.Length;
 
-                var peekEndOfLine = reader.Peek();
-                var readEndOfLine = reader.Read();
+                var peekEndOfLine = reader.Current;
+                var readEndOfLine = reader.Advance();
 
                 Assert.Equal(peekEndOfLine, CharactersHelpers.NL);
-                Assert.Equal(readEndOfLine, CharactersHelpers.NL);
             }
         }
     }

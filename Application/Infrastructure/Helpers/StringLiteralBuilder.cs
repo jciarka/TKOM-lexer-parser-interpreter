@@ -46,6 +46,7 @@ namespace Application.Infrastructure.Helpers
 
             if (escaped)
             {
+                // swith case lub dictionary
                 if (letter.Equals('n'))
                 {
                     _builder.Append('\n');
@@ -76,7 +77,7 @@ namespace Application.Infrastructure.Helpers
                 }
                 else
                 {
-                    _builder.Append(letter);
+                    _builder.Append(letter); // TO DO: Unexpected character 
                 }
 
                 escaped = false;

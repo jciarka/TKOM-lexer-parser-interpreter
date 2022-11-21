@@ -36,12 +36,12 @@ namespace Application.Infrastructure.Lekser.SourceReaders
         /// Reads the character the cursor is currently at and moves cursor one character forward
         /// </summary>
         /// <returns>Character the cursor is currently at</returns>
-        public char Read();
+        public char Current { get; }
 
         /// <summary>
         /// Reads the character the cursor is currently at without moving the cursor
         /// </summary>
         /// <returns>Character the cursor is currently at</returns>
-        public char Peek();
+        public bool Advance();
     }
 }
