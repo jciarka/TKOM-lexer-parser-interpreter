@@ -316,32 +316,74 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            StringBuilder lexemeBuilder = new StringBuilder();
-            StringLiteralBuilder literalBuilder = new StringLiteralBuilder();
+            StringBuilder builder = new StringBuilder();
+            StringBuilder literalBuilder = new StringBuilder();
 
-            while (literalBuilder.State != LiteralBuilderState.VALID)
+            builder.Append(_reader.Current);
+            _reader.Advance();
+
+            while (_reader.Current != '\"')
             {
-                var letter = _reader.Current;
-                _reader.Advance();
-
-                lexemeBuilder.Append(letter);
-                var result = literalBuilder.tryAppend(letter);
-
-                if (result == false)
+                if (_reader.Current.Equals(CharactersHelpers.EOF) || _reader.Current.Equals(CharactersHelpers.NL))
                 {
-                    throw new InvalidLiteralException(lexemeBuilder.ToString(), getCharacterPositionDetails());
+                    throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
                 }
+
+                if (_reader.Current.Equals('\\'))
+                {
+                    builder.Append(_reader.Current);
+                    _reader.Advance();
+
+                    switch (_reader.Current)
+                    {
+                        case 'n':
+                            literalBuilder.Append('\n');
+                            break;
+                        case 't':
+                            literalBuilder.Append('\t');
+                            break;
+                        case 'f':
+                            literalBuilder.Append('\f');
+                            break;
+                        case 'b':
+                            literalBuilder.Append('\b');
+                            break;
+                        case 'v':
+                            literalBuilder.Append('\v');
+                            break;
+                        case '\'':
+                            literalBuilder.Append('\'');
+                            break;
+                        case '\"':
+                            literalBuilder.Append('\"');
+                            break;
+                        case '\\':
+                            literalBuilder.Append('\\');
+                            break;
+                        default:
+                            throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
+                    }
+
+                    builder.Append(_reader.Current);
+                    _reader.Advance();
+                    continue;
+                }
+
+                builder.Append(_reader.Current);
+                literalBuilder.Append(_reader.Current);
+                _reader.Advance();
             }
+            builder.Append(_reader.Current);
+            _reader.Advance();
 
             Current = new Token()
             {
-                Lexeme = lexemeBuilder.ToString(),
+                Lexeme = builder.ToString(),
                 Type = TokenType.LITERAL,
                 StringValue = literalBuilder.ToString(),
                 ValueType = "string",
                 Position = _currentPosition,
             };
-
             return true;
         }
 
