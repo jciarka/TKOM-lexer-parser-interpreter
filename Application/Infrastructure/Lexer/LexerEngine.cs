@@ -175,69 +175,106 @@ namespace Application.Infrastructure.Lekser
             }
 
             var stringBuilder = new StringBuilder();
-            var numberBuilder = new NumberBuilder();
 
-            // build number part
-            buildNumericPartOfNumber(stringBuilder, numberBuilder);
-
-            // build type declaration part
-            var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
-
-            letter = _reader.Current;
-
-            if (char.IsLetterOrDigit(letter))
+            try
             {
-                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
-            }
+                var valueRepresentation = buildNumericPartOfNumber(stringBuilder, out var value);
+                var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
 
-            var finalRepresentation = declaredRepresentation ?? (numberBuilder.IsInteger ? TypeEnum.INT : TypeEnum.DECIMAL);
-            var finalType = declaredTypeLexeme ?? (finalRepresentation == TypeEnum.INT ? "int" : "decimal");
+                letter = _reader.Current;
 
-            if (finalRepresentation == TypeEnum.INT)
-            {
-                Current = new Token()
+                if (char.IsLetterOrDigit(letter))
                 {
-                    Lexeme = stringBuilder.ToString(),
-                    Type = TokenType.LITERAL,
-                    Position = _currentPosition,
-                    IntValue = numberBuilder.ToInteger(),
-                    ValueType = finalType
-                };
-            }
-            else
-            {
-                Current = new Token()
+                    throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+                }
+
+                var finalRepresentation = declaredRepresentation ?? valueRepresentation;
+                var finalType = declaredTypeLexeme ?? (finalRepresentation == TypeEnum.INT ? "int" : "decimal");
+
+                if (finalRepresentation == TypeEnum.INT)
                 {
-                    Lexeme = stringBuilder.ToString(),
-                    Type = TokenType.LITERAL,
-                    Position = _currentPosition,
-                    DecimalValue = numberBuilder.ToDecimal(),
-                    ValueType = finalType
-                };
+                    checked
+                    {
+                        Current = new Token()
+                        {
+                            Lexeme = stringBuilder.ToString(),
+                            Type = TokenType.LITERAL,
+                            Position = _currentPosition,
+                            IntValue = (int)value,
+                            ValueType = finalType
+                        };
+                    }
+                }
+                else
+                {
+                    Current = new Token()
+                    {
+                        Lexeme = stringBuilder.ToString(),
+                        Type = TokenType.LITERAL,
+                        Position = _currentPosition,
+                        DecimalValue = value,
+                        ValueType = finalType
+                    };
+                }
+
+            }
+            catch (OverflowException)
+            {
+                throw new TypeOverflowException(stringBuilder.ToString(), _currentPosition);
             }
 
             return true;
         }
 
-        private void buildNumericPartOfNumber(StringBuilder stringBuilder, NumberBuilder numberBuilder)
+        private TypeEnum buildNumericPartOfNumber(StringBuilder stringBuilder, out decimal value)
         {
-            while (char.IsDigit(_reader.Current) || _reader.Current.Equals('.'))
+            // integer part
+            value = 0m;
+            while (char.IsDigit(_reader.Current))
             {
-                if (!numberBuilder.tryAppend(_reader.Current))
+                checked
                 {
-                    if (numberBuilder.State == NumberBuilderState.OVERFLOWED)
-                    {
-                        throw new TypeOverflowException(stringBuilder.ToString(), getCharacterPositionDetails());
-                    }
-                    else
-                    {
-                        throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
-                    }
+                    value = 10 * value + (_reader.Current - '0');
                 }
 
                 stringBuilder.Append(_reader.Current);
                 _reader.Advance();
             }
+
+            if (!_reader.Current.Equals('.'))
+            {
+                return TypeEnum.INT;
+            }
+
+            stringBuilder.Append(_reader.Current);
+            _reader.Advance();
+
+            if (!char.IsDigit(_reader.Current))
+            {
+                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            // factorial part
+            decimal factorial = 1m;
+            while (char.IsDigit(_reader.Current))
+            {
+
+                checked
+                {
+                    factorial *= 0.1m;
+                    value += (_reader.Current - '0') * factorial;
+                }
+
+                stringBuilder.Append(_reader.Current);
+                _reader.Advance();
+            }
+
+            if (_reader.Current == '.')
+            {
+                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            return TypeEnum.DECIMAL;
         }
 
         private TypeEnum? buildTypeDeclarationPartOfNumber(StringBuilder builder, out string? typeLexem)
@@ -269,7 +306,6 @@ namespace Application.Infrastructure.Lekser
 
                 builder.Append(_reader.Current);
                 typeBuilder.Append(_reader.Current);
-
                 _reader.Advance();
             }
 
@@ -282,7 +318,12 @@ namespace Application.Infrastructure.Lekser
 
             typeLexem = match.First().Lexeme!;
 
-            // external typeshas decimal representation
+            if (char.IsLetterOrDigit(_reader.Current))
+            {
+                throw new InvalidLiteralException(typeBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            // external typehas decimal representation
             return TypeEnum.DECIMAL;
         }
 
@@ -380,7 +421,8 @@ namespace Application.Infrastructure.Lekser
             var builder = new StringBuilder();
 
             // grab next charaters while are letters
-            while ((char.IsLetterOrDigit(_reader.Current) || _reader.Current.Equals('_')) && builder.Length < _options.LiteralMaxLength)
+            while ((char.IsLetterOrDigit(_reader.Current) || _reader.Current.Equals('_'))
+                   && builder.Length < _options.LiteralMaxLength)
             {
                 builder.Append(_reader.Current);
                 _reader.Advance();
