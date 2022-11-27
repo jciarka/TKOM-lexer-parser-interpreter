@@ -107,6 +107,15 @@ namespace Tests.Lexer
         }
 
         [Theory]
+        [InlineData("10000000000000000000000000000000")]
+        [InlineData("10000000000000000000000000000000.11111111111111111111111111111111")]
+        public void ShouldToobigNumberIdentifierThrowOverflowError(string literal)
+        {
+            var reader = new StringSourceReader(literal);
+            Assert.Throws<TypeOverflowException>(() => new LexerEngine(reader));
+        }
+
+        [Theory]
         [InlineData("\"test\"", "test")]
         [InlineData("\"test\\\\test\"", "test\\test")]
         [InlineData("\"test\\ntest\"", "test\ntest")]
