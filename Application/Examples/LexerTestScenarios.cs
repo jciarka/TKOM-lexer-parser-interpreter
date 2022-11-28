@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.ConfigurationParser;
 using Application.Infrastructure.Lekser;
 using Application.Infrastructure.Lekser.SourceReaders;
+using Application.Infrastructure.Lexer;
 using Application.Infrastructure.Presenters;
 using Application.Models.Tokens;
 using System;
@@ -18,14 +19,47 @@ namespace Application.Examples
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_Ok.txt");
 
-            using (var lexer = new LexerEngine(new FileSourceReader(path),
-                 new LexerOptions { TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" }) }))
+            using (var reader = new FileSourceReader(path))
             {
+                var lexer = new LexerEngine(
+                    reader,
+                    new LexerOptions
+                    {
+                        TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                    });
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
+                }
+
+            }
+        }
+
+        public static void ExampleWithSourceOkAndCommentFilter_File()
+        {
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_Ok.txt");
+
+            using (var reader = new FileSourceReader(path))
+            {
+                var lexer = new SkipCommentsFilter(
+                    new LexerEngine(
+                         reader,
+                         new LexerOptions
+                         {
+                             TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                         }
+                    ));
+
+                TokenPresenter presenter = new TokenPresenter();
+
+                while (lexer.Current.Type != TokenType.EOF)
+                {
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
         }
@@ -135,15 +169,21 @@ void main()
                                                x => x.currecy == USD);
 }
 ";
-            using (var lexer = new LexerEngine(new StringSourceReader(content),
-                 new LexerOptions { TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" }) }))
+            using (var reader = new StringSourceReader(content))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(
+                    reader,
+                    new LexerOptions
+                    {
+                        TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                    });
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
         }
@@ -152,30 +192,32 @@ void main()
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\CurrencyConfguration_Ok.txt");
 
-            using (var lexer = new LexerEngine(new FileSourceReader(path)))
+            using (var reader = new FileSourceReader(path))
             {
+                var lexer = new LexerEngine(reader);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
             Console.WriteLine();
 
-            using (var lexer = new LexerEngine(new FileSourceReader(path)))
+            using (var reader = new FileSourceReader(path))
+            using (var errorReader = new FileSourceRandomReader(path))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(reader);
+
+                var errorHandler = new ConsoleErrorHandler(errorReader);
+                var parser = new ConfigurationParserEngine(lexer, errorHandler);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                var configurationInfo = parser.Parse(out var issues);
-
-                if (issues.Count() > 0)
-                {
-                    var errorPresenter = new ErrorConsolePresenter(new FileSourceRandomReader(path));
-                    errorPresenter.Present(issues);
-                }
+                var configurationInfo = parser.Parse();
             }
         }
 
@@ -194,31 +236,32 @@ void main()
             INR 0.01  0.02  0.01  0.01  0.09   0.01     1.8  0.02      1  0.09;
             CNY 0.14  0.19  0.14  0.12  1.07   0.14   20.37  0.21  11.33     1;
             ";
-            using (var lexer = new LexerEngine(new StringSourceReader(content)))
+
+            using (var reader = new StringSourceReader(content))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(reader);
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
             Console.WriteLine();
 
-            using (var lexer = new LexerEngine(new StringSourceReader(content)))
+            using (var reader = new StringSourceReader(content))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(reader);
+
+                var errorReader = new StringSourceRandomReader(content);
+                var errorHandler = new ConsoleErrorHandler(errorReader);
+                var parser = new ConfigurationParserEngine(lexer, errorHandler);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                var configurationInfo = parser.Parse(out var issues);
-
-                if (issues.Count() > 0)
-                {
-                    var errorPresenter = new ErrorConsolePresenter(new StringSourceRandomReader(content));
-                    errorPresenter.Present(issues);
-                }
+                var configurationInfo = parser.Parse();
             }
         }
 
@@ -226,30 +269,30 @@ void main()
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\CurrencyConfguration_Errors.txt");
 
-            using (var lexer = new LexerEngine(new FileSourceReader(path)))
+            using (var reader = new FileSourceReader(path))
             {
+                var lexer = new LexerEngine(reader);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
             Console.WriteLine();
 
-            using (var lexer = new LexerEngine(new FileSourceReader(path)))
+            using (var reader = new FileSourceReader(path))
+            using (var errorReader = new FileSourceRandomReader(path))
             {
-                var parser = new ConfigurationParserEngine(lexer);
-                TokenPresenter presenter = new TokenPresenter();
+                var lexer = new LexerEngine(reader);
 
-                var configurationInfo = parser.Parse(out var issues);
+                var errorHandler = new ConsoleErrorHandler(errorReader);
+                var parser = new ConfigurationParserEngine(lexer, errorHandler);
 
-                if (issues.Count() > 0)
-                {
-                    var errorPresenter = new ErrorConsolePresenter(new FileSourceRandomReader(path));
-                    errorPresenter.Present(issues);
-                }
+                var configurationInfo = parser.Parse();
             }
         }
 
@@ -268,31 +311,34 @@ AUD	 0.64  0.87  0.65  0.56   5.03   0.64   95.34     1  53.03  4.68;
 INR	 0.01  0.02  0.01  0.01   0.09   0.01     1.8  0.02      1  0.09;
 CNY	 0.14  0.19  0.14  0.12   1.07   0.14   20.37  0.21  11.33     1;
 ";
-            using (var lexer = new LexerEngine(new StringSourceReader(content)))
+            using (var reader = new StringSourceReader(content))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(reader);
+
+                var errorReader = new StringSourceRandomReader(content);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                while (lexer.Peek().Type != TokenType.EOF)
+                while (lexer.Current.Type != TokenType.EOF)
                 {
-                    presenter.PresentToken(lexer.Read());
+                    presenter.PresentToken(lexer.Current);
+                    lexer.Advance();
                 }
             }
 
             Console.WriteLine();
 
-            using (var lexer = new LexerEngine(new StringSourceReader(content)))
+            using (var reader = new StringSourceReader(content))
             {
-                var parser = new ConfigurationParserEngine(lexer);
+                var lexer = new LexerEngine(reader);
+
+                var errorReader = new StringSourceRandomReader(content);
+                var errorHandler = new ConsoleErrorHandler(errorReader);
+                var parser = new ConfigurationParserEngine(lexer, errorHandler);
+
                 TokenPresenter presenter = new TokenPresenter();
 
-                var configurationInfo = parser.Parse(out var issues);
-
-                if (issues.Count() > 0)
-                {
-                    var errorPresenter = new ErrorConsolePresenter(new StringSourceRandomReader(content));
-                    errorPresenter.Present(issues);
-                }
+                var configurationInfo = parser.Parse();
             }
         }
     }

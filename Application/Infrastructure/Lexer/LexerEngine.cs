@@ -14,172 +14,81 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Lekser
 {
-    public class LexerEngine : ILexer, IDisposable
+    public class LexerEngine : ILexer
     {
         private readonly ISourceReader _reader;
-        private readonly LinkedList<Token> _waiting;
-        private readonly LinkedList<Token> _consumed;
         private readonly LexerOptions _options;
+        private CharacterPosition _currentPosition;
+
+        public Token Current { get; private set; }
+
+#pragma warning disable CS8618 // Current assigned inside advance generates null assignement warning
 
         public LexerEngine(ISourceReader reader, LexerOptions? options = null)
         {
             _options = options ?? new LexerOptions();
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-            _waiting = new LinkedList<Token>();
-            _consumed = new LinkedList<Token>();
+            _currentPosition = getCharacterPositionDetails();
+
+            Advance(); // load first token to current
         }
 
-        public Token Future(int index)
+#pragma warning restore CS8618 // Current assigned inside advance
+
+
+        public bool Advance()
         {
-            if (_waiting.Count() > index)
-            {
-                for (int requiredIndex = _waiting.Count(); requiredIndex <= index; requiredIndex++)
-                {
-                    var next = getNext();
-
-                    _waiting.AddLast(next);
-
-                    if (next.Type == TokenType.EOF)
-                    {
-                        return next;
-                    }
-                }
-            }
-
-            return _waiting.ElementAt(index);
-        }
-
-        public Token Peek()
-        {
-            if (_waiting.Any())
-            {
-                return _waiting.First();
-            }
-
-            var next = getNext();
-
-            _waiting.AddLast(next);
-
-            return next;
-        }
-
-        public Token Read()
-        {
-            if (_waiting.Any())
-            {
-                var next = _waiting.First();
-
-                _waiting.RemoveFirst();
-                _consumed.AddFirst(next);
-
-                return next;
-            }
-
-            return getNext();
-        }
-
-        public Token? Previous()
-        {
-            if (_consumed.Any())
-            {
-                return _consumed.First();
-            }
-
-            return null;
-        }
-
-        public Token? Previous(int index)
-        {
-            if (_consumed.Count() > index)
-            {
-                return _consumed.ElementAt(index);
-            }
-
-            return null;
-        }
-
-        private Token getNext()
-        {
-            Token? token = null;
-
             skipWhiteSpaces();
 
-            if (tryBuildEof(out token))
+            _currentPosition = getCharacterPositionDetails();
+
+            if (tryBuildEof())
             {
-                return token!;
+                return false;
             }
 
-            if (tryBuildControlCharacterToken(out token))
+            if (tryBuildControlCharacterToken() ||
+                tryBuildOperatorToken() ||
+                tryBuildComment() ||
+                tryBuildStringLiteralToken() ||
+                tryBuildNumericLiteralToken() ||
+                tryBuildAlphaNumericToken())
             {
-                return token!;
+                return true;
             }
 
-            if (tryBuildOperatorToken(out token))
-            {
-                return token!;
-            }
+            var letter = _reader.Current;
+            _reader.Advance();
 
-            if (tryBuildComment(out token))
-            {
-                return token!;
-            }
-
-            if (tryBuildStringLiteralToken(out token))
-            {
-                return token!;
-            }
-
-            if (tryBuildNumericLiteralToken(out token))
-            {
-                return token!;
-            }
-
-            if (tryBuildAlphaNumericToken(out token))
-            {
-                return token!;
-            }
-
-            var position = getCharacterPositionDetails();
-            var letter = _reader.Read();
-            throw new UnexpectedCharacterException(letter, position);
+            throw new UnexpectedCharacterException(letter, _currentPosition);
         }
 
         private void skipWhiteSpaces()
         {
-            char next = _reader.Peek();
-
-            while (char.IsWhiteSpace(next) || next.Equals(CharactersHelpers.NL))
+            while (char.IsWhiteSpace(_reader.Current) || _reader.Current.Equals(CharactersHelpers.NL))
             {
-                _reader.Read();
-                next = _reader.Peek();
+                _reader.Advance();
             }
         }
 
         /// <summary>
         /// Builds one character tokens
         /// </summary>
-        private bool tryBuildControlCharacterToken(out Token? token)
+        private bool tryBuildControlCharacterToken()
         {
-            token = null;
-
-            var first = _reader.Peek();
-            var match = TokenHelpers.ControlCharactersTokenLexems
-                .Where(x => x.Lexeme!.Equals(first.ToString()));
-
-            if (!match.Any())
+            if (!TokenHelpers.ControlCharactersMap.ContainsKey(_reader.Current))
             {
                 return false;
             }
 
-            _reader.Read();
-            var lexemeInfo = match.First();
-
-            token = new Token()
+            Current = new Token()
             {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = getCharacterPositionDetails(),
+                Lexeme = _reader.Current.ToString(),
+                Type = TokenHelpers.ControlCharactersMap[_reader.Current],
+                Position = _currentPosition,
             };
+
+            _reader.Advance();
 
             return true;
         }
@@ -187,44 +96,37 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds One or two character tokens build from not alphanumeric characters
         /// </summary>
-        private bool tryBuildOperatorToken(out Token? token)
+        private bool tryBuildOperatorToken()
         {
-            token = null;
+            var first = _reader.Current;
 
-            var first = _reader.Peek();
-            var match = TokenHelpers.OperatorsTokenLexems
-                .Where(x => x.Lexeme!.First().Equals(first));
-
-            if (!match.Any())
+            if (!TokenHelpers.OneCharacterOperatorsMap.ContainsKey(first))
             {
                 return false;
             }
 
-            CharacterPosition tokenPosition = getCharacterPositionDetails();
-            _reader.Read();
-            var second = _reader.Peek();
+            _reader.Advance();
 
-            var twoCharMatch = TokenHelpers.TwoCharOperatorsTokenLexems
-                .Where(x => x.Lexeme!.Length == 2 && x.Lexeme[0].Equals(first) && x.Lexeme![1].Equals(second));
-
-            TokenLexeme lexemeInfo;
-
-            if (twoCharMatch.Any())
+            if (!TokenHelpers.TwoCharactersOperatorsMap.ContainsKey((first, _reader.Current)))
             {
-                lexemeInfo = twoCharMatch.First();
-                _reader.Read();
+                Current = new Token()
+                {
+                    Lexeme = first.ToString(),
+                    Type = TokenHelpers.OneCharacterOperatorsMap[first],
+                    Position = _currentPosition,
+                };
             }
             else
             {
-                lexemeInfo = match.First();
-            }
+                Current = new Token()
+                {
+                    Lexeme = new string(new char[] { first, _reader.Current }),
+                    Type = TokenHelpers.TwoCharactersOperatorsMap[(first, _reader.Current)],
+                    Position = _currentPosition,
+                };
 
-            token = new Token()
-            {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = tokenPosition,
-            };
+                _reader.Advance();
+            }
 
             return true;
         }
@@ -232,30 +134,28 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds comments (starts with #)
         /// </summary>
-        private bool tryBuildComment(out Token? token)
+        private bool tryBuildComment()
         {
-            token = null;
-            var letter = _reader.Peek();
+            var letter = _reader.Current;
 
             if (!letter.Equals('#'))
             {
                 return false;
             }
 
-            CharacterPosition tokenPosition = getCharacterPositionDetails();
             var commentBuilder = new StringBuilder();
 
             while (!letter.Equals(CharactersHelpers.NL) && !letter.Equals(CharactersHelpers.EOF))
             {
-                _reader.Read();
+                _reader.Advance();
                 commentBuilder.Append(letter);
-                letter = _reader.Peek();
+                letter = _reader.Current;
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Type = TokenType.COMMENT,
-                Position = tokenPosition,
+                Position = _currentPosition,
                 Lexeme = commentBuilder.ToString(),
             };
 
@@ -265,11 +165,9 @@ namespace Application.Infrastructure.Lekser
         /// <summary>
         /// Builds numeric character tokens (must start with digits)
         /// </summary>
-        private bool tryBuildNumericLiteralToken(out Token? token)
+        private bool tryBuildNumericLiteralToken()
         {
-            token = null;
-
-            var letter = _reader.Peek();
+            var letter = _reader.Current;
 
             if (!char.IsDigit(letter))
             {
@@ -277,95 +175,125 @@ namespace Application.Infrastructure.Lekser
             }
 
             var stringBuilder = new StringBuilder();
-            var numberBuilder = new NumberBuilder();
 
-            var tokenPosition = getCharacterPositionDetails();
-
-            // build number part
-            buildNumericPartOfNumber(stringBuilder, numberBuilder);
-
-            // build type declaration part
-            var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
-
-            letter = _reader.Peek();
-
-            if (char.IsLetterOrDigit(letter))
+            try
             {
-                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
-            }
+                var valueRepresentation = buildNumericPartOfNumber(stringBuilder, out var value);
+                var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
 
-            var finalRepresentation = declaredRepresentation ?? (numberBuilder.IsInteger ? TypeEnum.INT : TypeEnum.DECIMAL);
-            var finalType = declaredTypeLexeme ?? (finalRepresentation == TypeEnum.INT ? "int" : "decimal");
+                letter = _reader.Current;
 
-            if (finalRepresentation == TypeEnum.INT)
-            {
-                token = new Token()
+                if (char.IsLetterOrDigit(letter))
                 {
-                    Lexeme = stringBuilder.ToString(),
-                    Type = TokenType.LITERAL,
-                    Position = tokenPosition,
-                    IntValue = numberBuilder.ToInteger(),
-                    ValueType = finalType
-                };
-            }
-            else
-            {
-                token = new Token()
+                    throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+                }
+
+                var finalRepresentation = declaredRepresentation ?? valueRepresentation;
+                var finalType = declaredTypeLexeme ?? (finalRepresentation == TypeEnum.INT ? "int" : "decimal");
+
+                if (finalRepresentation == TypeEnum.INT)
                 {
-                    Lexeme = stringBuilder.ToString(),
-                    Type = TokenType.LITERAL,
-                    Position = tokenPosition,
-                    DecimalValue = numberBuilder.ToDecimal(),
-                    ValueType = finalType
-                };
+                    checked
+                    {
+                        Current = new Token()
+                        {
+                            Lexeme = stringBuilder.ToString(),
+                            Type = TokenType.LITERAL,
+                            Position = _currentPosition,
+                            IntValue = (int)value,
+                            ValueType = finalType
+                        };
+                    }
+                }
+                else
+                {
+                    Current = new Token()
+                    {
+                        Lexeme = stringBuilder.ToString(),
+                        Type = TokenType.LITERAL,
+                        Position = _currentPosition,
+                        DecimalValue = value,
+                        ValueType = finalType
+                    };
+                }
+
+            }
+            catch (OverflowException)
+            {
+                throw new TypeOverflowException(stringBuilder.ToString(), _currentPosition);
             }
 
             return true;
         }
 
-        private void buildNumericPartOfNumber(StringBuilder stringBuilder, NumberBuilder numberBuilder)
+        private TypeEnum buildNumericPartOfNumber(StringBuilder stringBuilder, out decimal value)
         {
-            var letter = _reader.Peek();
-
-            while (char.IsDigit(letter) || _reader.Peek().Equals('.'))
+            // integer part
+            value = 0m;
+            while (char.IsDigit(_reader.Current))
             {
-                if (!numberBuilder.tryAppend(letter))
+                checked
                 {
-                    if (numberBuilder.State == NumberBuilderState.OVERFLOWED)
-                    {
-                        throw new TypeOverflowException(stringBuilder.ToString(), getCharacterPositionDetails());
-                    }
-                    else
-                    {
-                        throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
-                    }
+                    value = 10 * value + (_reader.Current - '0');
                 }
 
-                _reader.Read();
-                stringBuilder.Append(letter);
-
-                letter = _reader.Peek();
+                stringBuilder.Append(_reader.Current);
+                _reader.Advance();
             }
+
+            if (!_reader.Current.Equals('.'))
+            {
+                return TypeEnum.INT;
+            }
+
+            stringBuilder.Append(_reader.Current);
+            _reader.Advance();
+
+            if (!char.IsDigit(_reader.Current))
+            {
+                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            // factorial part
+            decimal factorial = 1m;
+            while (char.IsDigit(_reader.Current))
+            {
+
+                checked
+                {
+                    factorial *= 0.1m;
+                    value += (_reader.Current - '0') * factorial;
+                }
+
+                stringBuilder.Append(_reader.Current);
+                _reader.Advance();
+            }
+
+            if (_reader.Current == '.')
+            {
+                throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            return TypeEnum.DECIMAL;
         }
 
         private TypeEnum? buildTypeDeclarationPartOfNumber(StringBuilder builder, out string? typeLexem)
         {
-            char letter = _reader.Peek();
-
             // type EMPTY
-            if (!char.IsLetter(letter))
+            if (!char.IsLetter(_reader.Current))
             {
                 typeLexem = null;
                 return null;
             }
 
             // type DECIMAL
-            if (letter.Equals('D') || letter.Equals('d'))
+            if (_reader.Current.Equals('D') || _reader.Current.Equals('d'))
             {
-                letter = _reader.Read();
-                builder.Append(letter);
 
+                builder.Append(_reader.Current);
                 typeLexem = "decimal";
+
+                _reader.Advance();
 
                 return TypeEnum.DECIMAL;
             }
@@ -373,13 +301,12 @@ namespace Application.Infrastructure.Lekser
             // type EXTERNAL
             var typeBuilder = new StringBuilder();
 
-            while (char.IsLetterOrDigit(letter))
+            while (char.IsLetterOrDigit(_reader.Current))
             {
-                _reader.Read();
-                builder.Append(letter);
-                typeBuilder.Append(letter);
 
-                letter = _reader.Peek();
+                builder.Append(_reader.Current);
+                typeBuilder.Append(_reader.Current);
+                _reader.Advance();
             }
 
             var match = _options.TypesInfo!.ExternalTypes.Where(x => x.Lexeme!.Equals(typeBuilder.ToString()));
@@ -391,104 +318,145 @@ namespace Application.Infrastructure.Lekser
 
             typeLexem = match.First().Lexeme!;
 
-            // external typeshas decimal representation
+            if (char.IsLetterOrDigit(_reader.Current))
+            {
+                throw new InvalidLiteralException(typeBuilder.ToString(), getCharacterPositionDetails());
+            }
+
+            // external typehas decimal representation
             return TypeEnum.DECIMAL;
         }
 
         /// <summary>
         /// Builds string literal tokens (must start with ")
         /// </summary>
-        private bool tryBuildStringLiteralToken(out Token? token)
+        private bool tryBuildStringLiteralToken()
         {
-            token = null;
-
-            if (_reader.Peek() != '\"')
+            if (_reader.Current != '\"')
             {
                 return false;
             }
 
-            StringBuilder lexemeBuilder = new StringBuilder();
-            StringLiteralBuilder literalBuilder = new StringLiteralBuilder();
+            StringBuilder builder = new StringBuilder();
+            StringBuilder literalBuilder = new StringBuilder();
 
-            while (literalBuilder.State != LiteralBuilderState.VALID)
+            builder.Append(_reader.Current);
+            _reader.Advance();
+
+            while (_reader.Current != '\"')
             {
-                var letter = _reader.Read();
-
-                lexemeBuilder.Append(letter);
-                var result = literalBuilder.tryAppend(letter);
-
-                if (result == false)
+                if (_reader.Current.Equals(CharactersHelpers.EOF) || _reader.Current.Equals(CharactersHelpers.NL))
                 {
-                    throw new InvalidLiteralException(lexemeBuilder.ToString(), getCharacterPositionDetails());
+                    throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
                 }
-            }
 
-            token = new Token()
+                // TO DO: overflow
+
+                if (_reader.Current.Equals('\\'))
+                {
+                    builder.Append(_reader.Current);
+                    _reader.Advance();
+
+                    switch (_reader.Current)
+                    {
+                        case 'n':
+                            literalBuilder.Append('\n');
+                            break;
+                        case 't':
+                            literalBuilder.Append('\t');
+                            break;
+                        case 'f':
+                            literalBuilder.Append('\f');
+                            break;
+                        case 'b':
+                            literalBuilder.Append('\b');
+                            break;
+                        case 'v':
+                            literalBuilder.Append('\v');
+                            break;
+                        case '\'':
+                            literalBuilder.Append('\'');
+                            break;
+                        case '\"':
+                            literalBuilder.Append('\"');
+                            break;
+                        case '\\':
+                            literalBuilder.Append('\\');
+                            break;
+                        default:
+                            throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
+                    }
+                }
+                else
+                {
+                    literalBuilder.Append(_reader.Current);
+                }
+
+                builder.Append(_reader.Current);
+                _reader.Advance();
+            }
+            builder.Append(_reader.Current);
+            _reader.Advance();
+
+            Current = new Token()
             {
-                Lexeme = lexemeBuilder.ToString(),
+                Lexeme = builder.ToString(),
                 Type = TokenType.LITERAL,
                 StringValue = literalBuilder.ToString(),
                 ValueType = "string",
-                Position = getCharacterPositionDetails(),
+                Position = _currentPosition,
             };
-
             return true;
         }
 
         /// <summary>
         /// Builds tokens that are build only with alphanumeric characters
         /// </summary>
-        private bool tryBuildAlphaNumericToken(out Token? token)
+        private bool tryBuildAlphaNumericToken()
         {
-            token = null;
-
-            var letter = _reader.Peek();
-
-            if (!char.IsLetter(letter))
+            if (!char.IsLetter(_reader.Current))
             {
                 return false;
             }
 
-            var tokenPosition = getCharacterPositionDetails();
             var builder = new StringBuilder();
 
             // grab next charaters while are letters
-            while ((char.IsLetterOrDigit(letter) || letter.Equals('_')) && builder.Length < _options.LiteralMaxLength)
+            while ((char.IsLetterOrDigit(_reader.Current) || _reader.Current.Equals('_'))
+                   && builder.Length < _options.LiteralMaxLength)
             {
-                builder.Append(_reader.Read());
-                letter = _reader.Peek();
+                builder.Append(_reader.Current);
+                _reader.Advance();
             }
 
-            if (char.IsLetterOrDigit(_reader.Peek()))
+            if (char.IsLetterOrDigit(_reader.Current))
             {
                 throw new TooLongIdentifierException(builder.ToString(), getCharacterPositionDetails());
             }
 
             var lexeme = builder.ToString();
 
-            if (tryMatchKeywordsToken(lexeme, tokenPosition, out token))
+            if (tryMatchKeywordsToken(lexeme))
             {
                 return true;
             }
 
-            if (tryMatchBooleanLiteralToken(lexeme, tokenPosition, out token))
+            if (tryMatchBooleanLiteralToken(lexeme))
             {
                 return true;
             }
 
-            if (tryMatchTypeToken(lexeme, tokenPosition, out token))
+            if (tryMatchTypeToken(lexeme))
             {
                 return true;
             }
 
-            token = buildIdentifier(lexeme, tokenPosition);
+            Current = buildIdentifier(lexeme);
             return true;
         }
 
-        private bool tryMatchBooleanLiteralToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchBooleanLiteralToken(string lexeme)
         {
-            token = null;
-
             bool? boolValue = null;
             if (lexeme.Equals("true")) boolValue = true;
             if (lexeme.Equals("false")) boolValue = false;
@@ -498,62 +466,53 @@ namespace Application.Infrastructure.Lekser
                 return false;
             }
 
-            token = new Token()
+            Current = new Token()
             {
                 Type = TokenType.LITERAL,
                 ValueType = "bool",
                 BoolValue = boolValue,
                 Lexeme = lexeme,
-                Position = tokenPosition,
+                Position = _currentPosition,
             };
 
             return true;
         }
 
-        private bool tryBuildEof(out Token? token)
+        private bool tryBuildEof()
         {
-            token = null;
-
-            if (!_reader.Peek().Equals(CharactersHelpers.EOF))
+            if (!_reader.Current.Equals(CharactersHelpers.EOF))
             {
                 return false;
             }
 
-            token = new Token
+            Current = new Token
             {
                 Type = TokenType.EOF,
-                Position = getCharacterPositionDetails(),
+                Position = _currentPosition,
             };
+
             return true;
         }
 
-        private bool tryMatchKeywordsToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchKeywordsToken(string lexeme)
         {
-            token = null;
-
-            var match = TokenHelpers.KeywordsTokenLexems.Where(x => x.Lexeme!.Equals(lexeme));
-
-            if (!match.Any())
+            if (!TokenHelpers.KeywordsMap.ContainsKey(lexeme))
             {
                 return false;
             }
 
-            var lexemeInfo = match.First();
-
-            token = new Token()
+            Current = new Token()
             {
-                Lexeme = lexemeInfo.Lexeme,
-                Type = lexemeInfo.Type,
-                Position = tokenPosition,
+                Lexeme = lexeme,
+                Type = TokenHelpers.KeywordsMap[lexeme],
+                Position = _currentPosition,
             };
 
             return true;
         }
 
-        private bool tryMatchTypeToken(string lexeme, CharacterPosition tokenPosition, out Token? token)
+        private bool tryMatchTypeToken(string lexeme)
         {
-            token = null;
-
             var match = _options.TypesInfo!.Types.Where(x => x.Lexeme!.Equals(lexeme));
 
             if (!match.Any())
@@ -563,24 +522,24 @@ namespace Application.Infrastructure.Lekser
 
             var typeInfo = match.First();
 
-            token = new Token()
+            Current = new Token()
             {
                 Lexeme = typeInfo.Lexeme,
                 Type = TokenType.TYPE,
-                Position = tokenPosition,
+                Position = _currentPosition,
                 StringValue = typeInfo.Lexeme,
             };
 
             return true;
         }
 
-        private Token? buildIdentifier(string lexeme, CharacterPosition tokenPosition)
+        private Token buildIdentifier(string lexeme)
         {
             return new Token()
             {
                 Lexeme = lexeme,
                 Type = TokenType.IDENTIFIER,
-                Position = tokenPosition
+                Position = _currentPosition
             };
         }
 
@@ -593,11 +552,6 @@ namespace Application.Infrastructure.Lekser
                 LinePosition = _reader.LinePosition,
                 Position = _reader.Position,
             };
-        }
-
-        public void Dispose()
-        {
-            _reader.Dispose();
         }
     }
 }

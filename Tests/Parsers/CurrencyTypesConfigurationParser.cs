@@ -1,7 +1,10 @@
 ﻿using Application.Infrastructure.ConfigurationParser;
+using Application.Infrastructure.ErrorHandling;
 using Application.Infrastructure.Lekser;
 using Application.Infrastructure.Lekser.SourceReaders;
+using Application.Models.Exceptions;
 using Application.Models.Exceptions.ConfigurationParser;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +16,22 @@ namespace Tests.Parsers
 {
     public class CurrencyTypesConfigurationParserTests
     {
+        Mock<IErrorHandler> _errorHandlerMock;
+
+        public CurrencyTypesConfigurationParserTests()
+        {
+            _errorHandlerMock = new Mock<IErrorHandler>();
+        }
+
         [Fact]
         public void ShouldParseAllCurrienciesInHeaderRowWithNormalisation()
         {
             var content = @" USD   cad   EUR 	GBP   HkD  CHF   Jpy   auD  INR  CNY;";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
 
-            var config = parser.Parse(out var issues);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
+
+            var config = parser.Parse();
 
             Assert.Equal("USD", config.currencyTypes[0]);
             Assert.Equal("CAD", config.currencyTypes[1]);
@@ -43,12 +54,12 @@ namespace Tests.Parsers
                 GBP        0.9        1;
             ";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
 
-            var config = parser.Parse(out var issues);
+            var config = parser.Parse();
 
-            Assert.Equal(1, issues.Count);
-            Assert.IsType<InvalidCurrencyNameException>(issues.First());
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<ComputingException>()), Times.Once);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<InvalidCurrencyNameException>()), Times.Once);
 
             Assert.Equal("CANDOL", config.currencyTypes[0]);
             Assert.Equal("GBP", config.currencyTypes[1]);
@@ -59,11 +70,11 @@ namespace Tests.Parsers
         {
             var content = @"USD USD; ";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
 
-            var config = parser.Parse(out var issues);
+            var config = parser.Parse();
 
-            Assert.Contains(issues, x => x.GetType() == typeof(DuplicatedCurrencyException));
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<DuplicatedCurrencyException>()), Times.Once);
         }
 
         [Fact]
@@ -75,11 +86,11 @@ namespace Tests.Parsers
                 USD     0.9        1;
             ";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
 
-            var config = parser.Parse(out var issues);
+            var config = parser.Parse();
 
-            Assert.Contains(issues, x => x.GetType() == typeof(DuplicatedCurrencyException));
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<DuplicatedCurrencyException>()), Times.Once);
         }
 
         [Theory]
@@ -94,10 +105,10 @@ namespace Tests.Parsers
             ";
 
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
-            var config = parser.Parse(out var issues);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
+            var config = parser.Parse();
 
-            Assert.Empty(issues);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<DuplicatedCurrencyException>()), Times.Never);
             Assert.Equal(targetValue, config.currencyConvertions[("USD", "USD")]);
         }
 
@@ -112,10 +123,10 @@ namespace Tests.Parsers
             ";
 
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
-            var config = parser.Parse(out var issues);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
+            var config = parser.Parse();
 
-            Assert.Empty(issues);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<DuplicatedCurrencyException>()), Times.Never);
 
             Assert.Contains("USD", config.currencyTypes);
             Assert.Contains("CAD", config.currencyTypes);
@@ -132,8 +143,6 @@ namespace Tests.Parsers
             Assert.Equal(0.73M, config.currencyConvertions[("CAD", "USD")]);
             Assert.Equal(1M, config.currencyConvertions[("CAD", "CAD")]);
             Assert.Equal(0.74M, config.currencyConvertions[("CAD", "EUR")]);
-
-            Assert.Empty(issues);
         }
 
         [Fact]
@@ -145,12 +154,12 @@ namespace Tests.Parsers
                 GBP     0.9        1;
             ";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
 
-            var config = parser.Parse(out var issues);
+            var config = parser.Parse();
 
-            Assert.Equal(1, issues.Count);
-            Assert.IsType<UnexpectedTokenException>(issues.First());
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<ComputingException>()), Times.Once);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<UnexpectedTokenException>()), Times.Once);
         }
 
         [Fact]
@@ -161,12 +170,12 @@ namespace Tests.Parsers
                 GBP     0.9        1;
             ";
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
 
-            var config = parser.Parse(out var issues);
+            var config = parser.Parse();
 
-            Assert.Equal(1, issues.Count);
-            Assert.IsType<UnexpectedTokenException>(issues.First());
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<ComputingException>()), Times.Once);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<UnexpectedTokenException>()), Times.Once);
         }
 
         [Fact]
@@ -179,12 +188,11 @@ namespace Tests.Parsers
             ";
 
             var lexer = new LexerEngine(new StringSourceReader(content));
-            var parser = new ConfigurationParserEngine(lexer);
-            var config = parser.Parse(out var issues);
+            var parser = new ConfigurationParserEngine(lexer, _errorHandlerMock.Object);
+            var config = parser.Parse();
 
-
-            Assert.Equal(1, issues.Count);
-            Assert.IsType<UnexpectedTokenException>(issues.First());
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<ComputingException>()), Times.Once);
+            _errorHandlerMock.Verify(x => x.HandleError(It.IsAny<UnexpectedTokenException>()), Times.Once);
 
             Assert.Contains("USD", config.currencyTypes);
             Assert.Contains("CAD", config.currencyTypes);

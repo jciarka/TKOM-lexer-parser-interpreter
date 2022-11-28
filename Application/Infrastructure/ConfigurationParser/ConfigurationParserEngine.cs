@@ -1,4 +1,5 @@
-﻿using Application.Infrastructure.Lekser;
+﻿using Application.Infrastructure.ErrorHandling;
+using Application.Infrastructure.Lekser;
 using Application.Models.ConfigurationParser;
 using Application.Models.Exceptions;
 using Application.Models.Exceptions.ConfigurationParser;
@@ -13,158 +14,147 @@ namespace Application.Infrastructure.ConfigurationParser
 {
     public class ConfigurationParserEngine
     {
+        private readonly CurrencyTypesInfo _result = new();
         private readonly ILexer _lexer;
+        private readonly IErrorHandler _errorHandler;
 
-        public ConfigurationParserEngine(ILexer lexer)
+        public ConfigurationParserEngine(ILexer lexer, IErrorHandler errorHandler)
         {
             _lexer = lexer;
+            _errorHandler = errorHandler;
         }
 
-        public CurrencyTypesConfiguration Parse(out ICollection<ComputingException> issues)
+        public CurrencyTypesInfo Parse()
         {
-            issues = new List<ComputingException>();
-            var config = new CurrencyTypesConfiguration();
+            parseHeader();
 
-            parseHeader(config.currencyTypes, issues);
-            parseBody(config.currencyTypes, config.currencyConvertions, issues);
+            parseBody();
 
-            return config;
+            return _result;
         }
 
-        private void parseHeader(ICollection<string> currencyTypes, ICollection<ComputingException> parseIssues)
+        private void parseHeader()
         {
             try
             {
-                parseHeaderLine(currencyTypes, parseIssues);
+                parseHeaderLine();
             }
             catch (ComputingException issue)
             {
-                parseIssues.Add(issue);
+                _errorHandler.HandleError(issue);
             }
         }
 
-        private void parseHeaderLine(ICollection<string> currencyTypes, ICollection<ComputingException> parseIssues)
+        private void parseHeaderLine()
         {
-            var token = _lexer.Peek();
-
-            while (token.Type == TokenType.IDENTIFIER)
+            while (_lexer.Current.Type == TokenType.IDENTIFIER)
             {
-                var normalized = normalize(token.Lexeme!);
+                var normalized = normalize(_lexer.Current.Lexeme!);
 
-                if (currencyTypes.Contains(normalized))
+                if (_result.currencyTypes.Contains(normalized))
                 {
-                    parseIssues.Add(new DuplicatedCurrencyException(token));
+                    _errorHandler.HandleError(new DuplicatedCurrencyException(_lexer.Current));
                 }
 
                 if (!validateName(normalized))
                 {
-                    parseIssues.Add(new InvalidCurrencyNameException(token));
+                    _errorHandler.HandleError(new InvalidCurrencyNameException(_lexer.Current));
                 }
 
-                currencyTypes.Add(normalized);
-
-                _lexer.Read();
-                token = _lexer.Peek();
+                _result.currencyTypes.Add(normalized);
+                _lexer.Advance();
             }
 
-            if (token.Type != TokenType.SEMICOLON)
+            if (_lexer.Current.Type != TokenType.SEMICOLON)
             {
-                parseIssues.Add(new UnexpectedTokenException(token, TokenType.SEMICOLON));
+                _errorHandler.HandleError(new UnexpectedTokenException(_lexer.Current, TokenType.SEMICOLON));
                 return;
             }
-            _lexer.Read();
+
+            _lexer.Advance();
         }
 
-        private void parseBody(
-                ICollection<string> currencyTypes,
-                Dictionary<(string CFrom, string CTo), decimal> currencyConvertion,
-                ICollection<ComputingException> parseIssues
-            )
+        private void parseBody()
         {
-            for (int i = 0; i < currencyTypes.Count(); i++)
+            for (int i = 0; i < _result.currencyTypes.Count(); i++)
             {
                 try
                 {
-                    parseBodyLine(currencyTypes, currencyConvertion, parseIssues);
+                    parseBodyLine();
                 }
                 catch (ComputingException issue)
                 {
-                    parseIssues.Add(issue);
+                    _errorHandler.HandleError(issue);
                     skipToSemicolon();
 
-                    if (_lexer.Peek().Type == TokenType.EOF) return;
+                    if (_lexer.Current.Type == TokenType.EOF) return;
                 }
             }
         }
 
         private void skipToSemicolon()
         {
-            var token = _lexer.Read();
-            while (token.Type != TokenType.SEMICOLON)
+            while (_lexer.Current.Type != TokenType.SEMICOLON)
             {
-                token = _lexer.Peek();
-
-                if (token.Type == TokenType.EOF)
+                if (_lexer.Current.Type == TokenType.EOF)
                 {
                     break;
                 }
 
-                token = _lexer.Read();
+                _lexer.Advance();
             }
+            _lexer.Advance();
         }
 
-        private void parseBodyLine(
-                ICollection<string> currencyTypes,
-                Dictionary<(string CFrom, string CTo), decimal> currencyConvertion,
-                ICollection<ComputingException> parseIssues)
+        private void parseBodyLine()
         {
-            var currencyFrom = readLineCurrencyFrom(currencyConvertion);
+            var currencyFrom = readLineCurrencyFrom();
 
-            foreach (var currencyTo in currencyTypes)
+            foreach (var currencyTo in _result.currencyTypes)
             {
-                readLineCurrencyConversion(currencyConvertion, currencyFrom, currencyTo);
+                readLineCurrencyConversion(currencyFrom, currencyTo);
             }
 
-            var token = _lexer.Peek();
-            if (token.Type != TokenType.SEMICOLON)
+            if (_lexer.Current.Type != TokenType.SEMICOLON)
             {
-                parseIssues.Add(new UnexpectedTokenException(token, TokenType.SEMICOLON));
+                _errorHandler.HandleError(new UnexpectedTokenException(_lexer.Current, TokenType.SEMICOLON));
                 return;
             }
-            _lexer.Read();
+
+            _lexer.Advance();
         }
 
-        private string readLineCurrencyFrom(Dictionary<(string CFrom, string CTo), decimal> currencyConvertion)
+        private string readLineCurrencyFrom()
         {
-            var token = _lexer.Read();
-
-            if (token.Type != TokenType.IDENTIFIER)
+            if (_lexer.Current.Type != TokenType.IDENTIFIER)
             {
-                throw new UnexpectedTokenException(token, TokenType.IDENTIFIER);
+                throw new UnexpectedTokenException(_lexer.Current, TokenType.IDENTIFIER);
             }
 
-            if (currencyConvertion.Keys.Any(x => x.CFrom.Equals(token.Lexeme)))
+            if (_result.currencyConvertions.Keys.Any(x => x.CFrom.Equals(_lexer.Current.Lexeme)))
             {
-                throw new DuplicatedCurrencyException(token);
+                throw new DuplicatedCurrencyException(_lexer.Current);
             }
 
-            return normalize(token.Lexeme!);
+            var lexeme = _lexer.Current.Lexeme!;
+            _lexer.Advance();
+
+            return normalize(lexeme);
         }
 
-        private void readLineCurrencyConversion(Dictionary<(string CFrom, string CTo), decimal> currencyConvertion, string currencyFrom, string currencyTo)
+        private void readLineCurrencyConversion(string currencyFrom, string currencyTo)
         {
-            var token = _lexer.Read();
-
-            if (token.Type != TokenType.LITERAL)
+            if (_lexer.Current.Type != TokenType.LITERAL)
             {
-                throw new UnexpectedTokenException(token, TokenType.LITERAL);
+                throw new UnexpectedTokenException(_lexer.Current, TokenType.LITERAL);
             }
 
-            currencyConvertion.Add(
+            _result.currencyConvertions.Add(
                 (currencyFrom, currencyTo),
-                token.DecimalValue ?? token.IntValue ?? throw new InvalidConversionValueException(token));
-        }
+                _lexer.Current.DecimalValue ?? _lexer.Current.IntValue ?? throw new InvalidConversionValueException(_lexer.Current));
 
+            _lexer.Advance();
+        }
 
         private bool validateName(string normalized)
         {

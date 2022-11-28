@@ -21,7 +21,7 @@ namespace Tests.Lexer
             var reader = new StringSourceReader("");
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
+            var token = lexer.Current;
 
             Assert.Equal(TokenType.EOF, token.Type);
         }
@@ -33,14 +33,12 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(tokenLexeme);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
+            Assert.Equal(targetType, lexer.Current.Type);
 
-            Assert.Equal(targetType, token.Type);
-
-            if (token.Type != TokenType.EOF)
+            if (lexer.Current.Type != TokenType.EOF)
             {
-                token = lexer.Read();
-                Assert.Equal(TokenType.EOF, token.Type);
+                lexer.Advance();
+                Assert.Equal(TokenType.EOF, lexer.Current.Type);
             }
         }
 
@@ -55,12 +53,10 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(integer);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
-
-            Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(integer, token.Lexeme);
-            Assert.Equal(int.Parse(integer), token.IntValue);
-            Assert.Equal("int", token.ValueType);
+            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+            Assert.Equal(integer, lexer.Current.Lexeme);
+            Assert.Equal(int.Parse(integer), lexer.Current.IntValue);
+            Assert.Equal("int", lexer.Current.ValueType);
         }
 
         [Theory]
@@ -73,15 +69,13 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(number);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
-
             var bareDecimalString = String.Concat(number.Where(x => !char.IsLetter(x)));
             var bareDecimal = decimal.Parse(bareDecimalString, new NumberFormatInfo { NumberDecimalSeparator = "." });
 
-            Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(bareDecimal, token.DecimalValue);
-            Assert.Equal(number, token.Lexeme);
-            Assert.Equal("decimal", token.ValueType);
+            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+            Assert.Equal(bareDecimal, lexer.Current.DecimalValue);
+            Assert.Equal(number, lexer.Current.Lexeme);
+            Assert.Equal("decimal", lexer.Current.ValueType);
         }
 
         [Theory]
@@ -94,15 +88,13 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(number);
             var lexer = new LexerEngine(reader, new LexerOptions { TypesInfo = new TypesInfoProvider(new string[] { "PLN", "USD" }) });
 
-            var token = lexer.Read();
-
             var bareDecimalString = String.Concat(number.Where(x => !char.IsLetter(x)));
             var bareDecimal = decimal.Parse(bareDecimalString, new NumberFormatInfo { NumberDecimalSeparator = "." });
 
-            Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(bareDecimal, token.DecimalValue);
-            Assert.Equal(number, token.Lexeme);
-            Assert.Equal(currency, token.ValueType);
+            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+            Assert.Equal(bareDecimal, lexer.Current.DecimalValue);
+            Assert.Equal(number, lexer.Current.Lexeme);
+            Assert.Equal(currency, lexer.Current.ValueType);
         }
 
         [Theory]
@@ -111,9 +103,16 @@ namespace Tests.Lexer
         public void ShouldInvlaidNumberIdentifierThrowError(string literal)
         {
             var reader = new StringSourceReader(literal);
-            var lexer = new LexerEngine(reader);
+            Assert.Throws<InvalidLiteralException>(() => new LexerEngine(reader));
+        }
 
-            Assert.Throws<InvalidLiteralException>(() => lexer.Read());
+        [Theory]
+        [InlineData("10000000000000000000000000000000")]
+        [InlineData("10000000000000000000000000000000.11111111111111111111111111111111")]
+        public void ShouldToobigNumberIdentifierThrowOverflowError(string literal)
+        {
+            var reader = new StringSourceReader(literal);
+            Assert.Throws<TypeOverflowException>(() => new LexerEngine(reader));
         }
 
         [Theory]
@@ -127,12 +126,10 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(lexeme);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
-
-            Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(targetValue, token.StringValue);
-            Assert.Equal(lexeme, token.Lexeme);
-            Assert.Equal("string", token.ValueType);
+            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+            Assert.Equal(targetValue, lexer.Current.StringValue);
+            Assert.Equal(lexeme, lexer.Current.Lexeme);
+            Assert.Equal("string", lexer.Current.ValueType);
         }
 
         [Theory]
@@ -141,9 +138,8 @@ namespace Tests.Lexer
         public void ShouldInvlaidStringIdentifierThrowError(string literal)
         {
             var reader = new StringSourceReader(literal);
-            var lexer = new LexerEngine(reader);
 
-            Assert.Throws<InvalidLiteralException>(() => lexer.Read());
+            Assert.Throws<InvalidLiteralException>(() => new LexerEngine(reader));
         }
 
         [Theory]
@@ -154,12 +150,10 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(content);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
-
-            Assert.Equal(TokenType.LITERAL, token.Type);
-            Assert.Equal(content.Equals("true") ? true : false, token.BoolValue);
-            Assert.Equal("bool", token.ValueType);
-            Assert.Equal(content, token.Lexeme);
+            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+            Assert.Equal(content.Equals("true") ? true : false, lexer.Current.BoolValue);
+            Assert.Equal("bool", lexer.Current.ValueType);
+            Assert.Equal(content, lexer.Current.Lexeme);
         }
 
         [Theory]
@@ -170,10 +164,8 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(identifier);
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
-
-            Assert.Equal(TokenType.IDENTIFIER, token.Type);
-            Assert.Equal(identifier, token.Lexeme);
+            Assert.Equal(TokenType.IDENTIFIER, lexer.Current.Type);
+            Assert.Equal(identifier, lexer.Current.Lexeme);
         }
 
         [Fact]
@@ -183,9 +175,7 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(content);
             var lexer = new LexerEngine(reader, new LexerOptions { LiteralMaxLength = 9 });
 
-            var token = lexer.Read();
-
-            Assert.Throws<TooLongIdentifierException>(() => lexer.Read());
+            Assert.Throws<TooLongIdentifierException>(() => lexer.Advance());
         }
 
         [Fact]
@@ -200,19 +190,17 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(builder.ToString());
             var lexer = new LexerEngine(reader);
 
-            var token = lexer.Read();
+            Assert.Equal(TokenType.COMMENT, lexer.Current.Type);
+            Assert.Equal(content, lexer.Current.Lexeme);
 
-            Assert.Equal(TokenType.COMMENT, token.Type);
-            Assert.Equal(content, token.Lexeme);
+            lexer.Advance();
 
-            token = lexer.Read();
+            Assert.Equal(TokenType.IDENTIFIER, lexer.Current.Type);
+            Assert.Equal("test", lexer.Current.Lexeme);
 
-            Assert.Equal(TokenType.IDENTIFIER, token.Type);
-            Assert.Equal("test", token.Lexeme);
+            lexer.Advance();
 
-            token = lexer.Read();
-
-            Assert.Equal(TokenType.EOF, token.Type);
+            Assert.Equal(TokenType.EOF, lexer.Current.Type);
         }
 
 
@@ -228,9 +216,8 @@ namespace Tests.Lexer
         public void ShouldUnknownTokenRaiseError(string character)
         {
             var reader = new StringSourceReader(character);
-            var lexer = new LexerEngine(reader);
 
-            Assert.Throws<UnexpectedCharacterException>(() => lexer.Read());
+            Assert.Throws<UnexpectedCharacterException>(() => new LexerEngine(reader));
         }
 
         [Fact]
@@ -254,42 +241,37 @@ namespace Tests.Lexer
             var reader = new StringSourceReader(content);
             var lexer = new LexerEngine(reader);
 
-            Token token;
-
             for (int i = 0; i < 10; i++)
             {
-                token = lexer.Read();
-
-                Assert.Equal(TokenType.IDENTIFIER, token.Type);
-                Assert.Equal(3, token.Lexeme!.Length);
+                Assert.Equal(TokenType.IDENTIFIER, lexer.Current.Type);
+                Assert.Equal(3, lexer.Current.Lexeme!.Length);
+                lexer.Advance();
             }
 
-            token = lexer.Read();
-            Assert.Equal(TokenType.SEMICOLON, token.Type);
+            Assert.Equal(TokenType.SEMICOLON, lexer.Current.Type);
+            lexer.Advance();
 
             for (int i = 0; i < 10; i++)
             {
-                token = lexer.Read();
+                Assert.Equal(TokenType.IDENTIFIER, lexer.Current.Type);
+                Assert.Equal(3, lexer.Current.Lexeme!.Length);
 
-                Assert.Equal(TokenType.IDENTIFIER, token.Type);
-                Assert.Equal(3, token.Lexeme!.Length);
+                lexer.Advance();
 
                 for (int j = 0; j < 10; j++)
                 {
-                    token = lexer.Read();
-
-                    Assert.Equal(TokenType.LITERAL, token.Type);
+                    Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
+                    lexer.Advance();
                 }
 
-                token = lexer.Read();
-                Assert.Equal(TokenType.SEMICOLON, token.Type);
+                Assert.Equal(TokenType.SEMICOLON, lexer.Current.Type);
+                lexer.Advance();
             }
 
-            token = lexer.Read();
-            Assert.Equal(TokenType.EOF, token.Type);
+            Assert.Equal(TokenType.EOF, lexer.Current.Type);
         }
 
         private static IEnumerable<object[]> getFixedTextTokenLexems() =>
-            TokenHelpers.TokenLexems.Select(x => new object[] { x.Lexeme!, x.Type! });
+            TokenHelpers.AllMap.Select(x => new object[] { x.Key, x.Value });
     }
 }
