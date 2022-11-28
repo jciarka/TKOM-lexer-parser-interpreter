@@ -702,7 +702,81 @@ namespace Application.Infrastructure.SourceParser
 
         private IEnumerable<ArgumentBase> parseArguments()
         {
-            throw new NotImplementedException();
+            var arguments = new List<ArgumentBase>();
+
+            while (checkType(TokenType.TYPE))
+            {
+                arguments.Add(parseArgument());
+
+                if (checkType(TokenType.COMMA))
+                {
+                    advance();
+                }
+                else if (!checkType(TokenType.RIGHT_PAREN))
+                {
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.COMMA));
+                }
+            }
+
+            return arguments;
+        }
+
+        private ArgumentBase parseArgument()
+        {
+            if (tryParseLambdaArgument(out Lambda? lambda))
+            {
+                return lambda!;
+            }
+
+            return parseExpressionArgument();
+        }
+
+        private ArgumentBase parseExpressionArgument()
+        {
+            return new ExpressionArgument(parseExpression());
+        }
+
+        private bool tryParseLambdaArgument(out Lambda? lambda)
+        {
+            if (!checkType(TokenType.LAMBDA))
+            {
+                lambda = null;
+                return false;
+            }
+
+            advance(); // Lambda
+
+            if (!checkType(TokenType.TYPE))
+            {
+                throw new MissingTokenException(current, TokenType.TYPE);
+            }
+
+            var type = getCurrentAndAdvance().Lexeme!;
+
+            if (!checkType(TokenType.IDENTIFIER))
+            {
+                throw new MissingTokenException(current, TokenType.IDENTIFIER);
+            }
+
+            var name = getCurrentAndAdvance().Lexeme!;
+
+            if (!checkType(TokenType.ARROW))
+            {
+                throw new MissingTokenException(current, TokenType.ARROW);
+            }
+
+            var parameter = new Parameter(type, name);
+
+            if (tryParseBlock(out BlockStmt? block))
+            {
+                lambda = new Lambda(parameter, block!);
+            }
+            else
+            {
+                lambda = new Lambda(parameter, new ExpressionStmt(parseExpression()));
+            }
+
+            return true;
         }
 
         private ExpressionBase parseTerm()
@@ -767,7 +841,17 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            term = new Literal(getCurrentAndAdvance());
+            var literal = getCurrentAndAdvance();
+
+            if (checkType(TokenType.TYPE) && _options.TypesInfo!.ExternalTypes.Select(x => x.Lexeme).Contains(current.Lexeme!))
+            {
+                term = new Literal(literal, getCurrentAndAdvance().Lexeme!);
+            }
+            else
+            {
+                term = new Literal(literal);
+            }
+
             return true;
         }
 

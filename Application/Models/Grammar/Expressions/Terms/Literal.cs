@@ -24,6 +24,12 @@ namespace Application.Models.Grammar
             Type = token.ValueType!;
         }
 
+        public Literal(Token numericLiteral, string currencyType)
+        {
+            DecimalValue = numericLiteral.DecimalValue ?? numericLiteral.IntValue;
+            Type = currencyType;
+        }
+
         public Literal(string type, bool? boolValue = null, string? stringValue = null, int? intValue = null, decimal? decimalValue = null)
         {
             BoolValue = boolValue;
