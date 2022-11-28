@@ -6,8 +6,8 @@ using Application.Infrastructure.Presenters;
 using Application.Models.Tokens;
 using System.Reflection;
 
-LexerTestScenarios.ExampleWithConfigurationOk_File();
-//LexerTestScenarios.ExampleWithConfigurationErrors_File();
+//LexerTestScenarios.ExampleWithConfigurationOk_File();
+LexerTestScenarios.ExampleWithConfigurationErrors_File();
 //LexerTestScenarios.ExampleWithConfigurationOk_String();
 //LexerTestScenarios.ExampleWithConfigurationErrors_String();
 //LexerTestScenarios.ExampleWithSourceOk_File();

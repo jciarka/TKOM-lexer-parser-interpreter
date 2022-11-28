@@ -350,6 +350,8 @@ namespace Application.Infrastructure.Lekser
                     throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
                 }
 
+                // TO DO: overflow
+
                 if (_reader.Current.Equals('\\'))
                 {
                     builder.Append(_reader.Current);
@@ -384,14 +386,13 @@ namespace Application.Infrastructure.Lekser
                         default:
                             throw new InvalidLiteralException(builder.ToString(), getCharacterPositionDetails());
                     }
-
-                    builder.Append(_reader.Current);
-                    _reader.Advance();
-                    continue;
+                }
+                else
+                {
+                    literalBuilder.Append(_reader.Current);
                 }
 
                 builder.Append(_reader.Current);
-                literalBuilder.Append(_reader.Current);
                 _reader.Advance();
             }
             builder.Append(_reader.Current);
