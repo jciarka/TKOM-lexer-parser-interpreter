@@ -1,4 +1,5 @@
-﻿using Application.Infrastructure.Lekser;
+﻿using Application.Infrastructure.ErrorHandling;
+using Application.Infrastructure.Lekser;
 using Application.Models.Exceptions;
 using Application.Models.Exceptions.SourseParser;
 using Application.Models.Grammar;
@@ -15,21 +16,19 @@ namespace Application.Infrastructure.SourceParser
     {
         private readonly ILexer _lexer;
         private readonly ParserOptions _options;
+        private readonly IErrorHandler _errorHandler;
 
-        public SourceParserEngine(ILexer lexer, ParserOptions options)
+        public SourceParserEngine(ILexer lexer, ParserOptions options, IErrorHandler errorHandler)
         {
             _lexer = lexer;
             _options = options;
-            issues = new List<ComputingException>();
+            _errorHandler = errorHandler;
         }
 
-        private ICollection<ComputingException> issues;
-
-        public ProgramRoot Parse(out IEnumerable<ComputingException> parseIssues)
+        public ProgramRoot Parse()
         {
             var functions = parseFunctionDeclarations();
 
-            parseIssues = issues;
             return new ProgramRoot(functions);
         }
 
@@ -46,12 +45,12 @@ namespace Application.Infrastructure.SourceParser
 
                 if (!checkType(TokenType.EOF))
                 {
-                    issues.Add(new ExpectedEofException(current));
+                    _errorHandler.HandleError(new ExpectedEofException(current));
                 }
             }
             catch (ComputingException ex)
             {
-                issues.Add(ex);
+                _errorHandler.HandleError(ex);
             }
 
             return functions;
@@ -60,26 +59,26 @@ namespace Application.Infrastructure.SourceParser
         private bool tryParseFunctionDeclaration(out FunctionDecl? function)
         {
             // function return type
-            if (checkType(TokenType.TYPE, TokenType.VOID))
+            if (!checkType(TokenType.TYPE, TokenType.VOID))
             {
                 function = null;
                 return false;
             }
 
-            var type = advance().Lexeme!;
+            var type = getCurrentAndAdvance().Lexeme!;
 
             // function name
-            if (current.Type != TokenType.IDENTIFIER)
+            if (!checkType(TokenType.IDENTIFIER))
             {
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var name = advance().Lexeme!;
+            var name = getCurrentAndAdvance().Lexeme!;
 
             // left parent 
-            if (checkType(TokenType.LEFT_PAREN))
+            if (!checkType(TokenType.LEFT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.LEFT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
             }
             else
             {
@@ -90,9 +89,9 @@ namespace Application.Infrastructure.SourceParser
             var parameters = parseParameters();
 
             // right parent
-            if (checkType(TokenType.RIGHT_PAREN))
+            if (!checkType(TokenType.RIGHT_PAREN))
             {
-                issues.Add(new MissingTokenException(advance(), TokenType.RIGHT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
             }
             else
             {
@@ -123,7 +122,7 @@ namespace Application.Infrastructure.SourceParser
                 }
                 else if (!checkType(TokenType.RIGHT_PAREN))
                 {
-                    issues.Add(new MissingTokenException(current, TokenType.COMMA));
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.COMMA));
                 }
             }
 
@@ -137,14 +136,14 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var type = advance().Lexeme!;
+            var type = getCurrentAndAdvance().Lexeme!;
 
             if (!checkType(TokenType.IDENTIFIER))
             {
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var identifier = advance().Lexeme!;
+            var identifier = getCurrentAndAdvance().Lexeme!;
 
             return new Parameter(type, identifier);
         }
@@ -154,7 +153,7 @@ namespace Application.Infrastructure.SourceParser
             var statements = new List<StatementBase>();
 
             // left brace
-            if (!checkType(TokenType.RIGHT_BRACE))
+            if (!checkType(TokenType.LEFT_BRACE))
             {
                 block = null;
                 return false;
@@ -176,6 +175,7 @@ namespace Application.Infrastructure.SourceParser
             {
                 throw new UnexpectedTokenException(current, TokenType.RIGHT_BRACE);
             }
+
             advance();
 
             block = new BlockStmt(statements);
@@ -186,38 +186,19 @@ namespace Application.Infrastructure.SourceParser
         {
             try
             {
-                if (tryParseIfStmt(out statement))
-                {
+                if (tryParseIfStmt(out statement) ||
+                    tryParseReturnStmt(out statement) ||
+                    tryParseForeachStmt(out statement) ||
+                    tryParseDeclarationStmt(out statement) ||
+                    tryParseReturnStmt(out statement) ||
+                    tryParseExpressionStmt(out statement)) // expression, assignment, financial operations
                     return true;
-                }
-                else if (tryParseReturnStmt(out statement))
-                {
-                    return true;
-                }
-                else if (tryParseForeachStmt(out statement))
-                {
-                    return true;
-                }
-                else if (tryParseDeclarationStmt(out statement))
-                {
-                    return true;
-                }
-                else if (tryParseReturnStmt(out statement))
-                {
-                    return true;
-                }
-                else if (tryParseExpressionStmt(out statement)) // expression, assignment, financial operations
-                {
-                    return true;
-                }
                 else
-                {
-                    issues.Add(new InvalidStatementException(current));
-                }
+                    _errorHandler.HandleError(new InvalidStatementException(current));
             }
             catch (ComputingException issue)
             {
-                issues.Add(issue);
+                _errorHandler.HandleError(issue);
             }
 
             // synchtonize to next statement
@@ -231,6 +212,7 @@ namespace Application.Infrastructure.SourceParser
         {
             while (!checkTypeAndAdvance(TokenType.SEMICOLON, TokenType.RIGHT_BRACE, TokenType.EOF))
             {
+                // pass
             }
 
             checkTypeAndAdvance(TokenType.SEMICOLON);
@@ -249,14 +231,14 @@ namespace Application.Infrastructure.SourceParser
             // condition
             if (!checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.LEFT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
             }
 
             var expression = parseExpression();
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
             }
 
             // then statement 
@@ -282,7 +264,7 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseForeachStmt(out StatementBase? statement)
         {
-            if (checkTypeAndAdvance(TokenType.FOREACH))
+            if (!checkTypeAndAdvance(TokenType.FOREACH))
             {
                 statement = null;
                 return false;
@@ -291,21 +273,21 @@ namespace Application.Infrastructure.SourceParser
             // declaration
             if (!checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.LEFT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
             }
 
             var parameter = parseParameter();
 
             if (!checkTypeAndAdvance(TokenType.IN))
             {
-                issues.Add(new UnexpectedTokenException(current, TokenType.IN));
+                _errorHandler.HandleError(new UnexpectedTokenException(current, TokenType.IN));
             }
 
             var expression = parseExpression();
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
             }
 
             // body
@@ -328,10 +310,7 @@ namespace Application.Infrastructure.SourceParser
 
             var expression = parseExpression();
 
-            if (!checkTypeAndAdvance(TokenType.SEMICOLON))
-            {
-                issues.Add(new MissingTokenException(current, TokenType.SEMICOLON));
-            }
+            skipSemicolon();
 
             statement = new ReturnStmt(expression);
             return true;
@@ -356,10 +335,7 @@ namespace Application.Infrastructure.SourceParser
                 return true;
             }
 
-            if (!checkTypeAndAdvance(TokenType.SEMICOLON))
-            {
-                issues.Add(new MissingTokenException(current, TokenType.SEMICOLON));
-            }
+            skipSemicolon();
 
             statement = new ExpressionStmt(expression);
             return true;
@@ -373,7 +349,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var operatorToken = advance();
+            var operatorToken = getCurrentAndAdvance();
 
             var valueExpression = parseExpression();
 
@@ -384,6 +360,7 @@ namespace Application.Infrastructure.SourceParser
             }
 
             statement = new FinancialFromStmt(expression, operatorToken.Type, valueExpression, accountToExpression);
+
             return true;
         }
 
@@ -395,10 +372,12 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var operatorToken = advance();
+            var operatorToken = getCurrentAndAdvance();
+
             var valueExpression = parseExpression();
 
             statement = new FinancialToStmt(expression, operatorToken.Type, valueExpression);
+
             return true;
         }
 
@@ -479,18 +458,17 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var typeToken = advance();
+            var typeToken = getCurrentAndAdvance();
             var type = typeToken.Type != TokenType.VAR ? typeToken.Lexeme! : null;
 
-            // variable name
             if (current.Type != TokenType.IDENTIFIER)
             {
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var name = advance().Lexeme!;
+            var name = getCurrentAndAdvance().Lexeme!;
 
-            if (typeToken.Type == TokenType.VAR && !checkType(TokenType.EQUAL))
+            if (typeToken.Type == TokenType.VAR && !checkType(TokenType.EQUAL)) // var must be assgned
             {
                 throw new UnknownTypeOnVariableDeclaration(typeToken);
             }
@@ -503,7 +481,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (!checkTypeAndAdvance(TokenType.SEMICOLON))
             {
-                issues.Add(new MissingTokenException(current, TokenType.SEMICOLON));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.SEMICOLON));
             }
 
             statement = new DeclarationStmt(new Identifier(name), valueExpression, type);
@@ -564,7 +542,7 @@ namespace Application.Infrastructure.SourceParser
                 TokenType.LESS,
                 TokenType.LESS_EQUAL))
             {
-                var operand = Tuple.Create(advance().Type, parseAdditiveExpr());
+                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseAdditiveExpr());
                 rExpressions.Add(operand);
             }
 
@@ -583,7 +561,7 @@ namespace Application.Infrastructure.SourceParser
 
             while (checkType(TokenType.PLUS, TokenType.MINUS))
             {
-                var operand = Tuple.Create(advance().Type, parseMultiplicativeExpr());
+                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseMultiplicativeExpr());
                 rExpressions.Add(operand);
             }
 
@@ -602,7 +580,7 @@ namespace Application.Infrastructure.SourceParser
 
             while (checkType(TokenType.STAR, TokenType.SLASH))
             {
-                var operand = Tuple.Create(advance().Type, parseNegatonExpr());
+                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseNegatonExpr());
                 rExpressions.Add(operand);
             }
 
@@ -618,7 +596,7 @@ namespace Application.Infrastructure.SourceParser
         {
             if (checkType(TokenType.BANG, TokenType.MINUS))
             {
-                return new NegativeExpr(advance().Type, parseConversionExpr());
+                return new NegativeExpr(getCurrentAndAdvance().Type, parseConversionExpr());
             }
 
             return parseConversionExpr();
@@ -682,7 +660,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var name = advance().Lexeme!;
+            var name = getCurrentAndAdvance().Lexeme!;
 
             if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
@@ -690,7 +668,7 @@ namespace Application.Infrastructure.SourceParser
 
                 if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
                 {
-                    issues.Add(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
                 newExpression = new ObjectMethodExpr(subExpression, name, arguments);
@@ -715,7 +693,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_BRACE))
             {
-                issues.Add(new MissingTokenException(current, TokenType.RIGHT_BRACE));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_BRACE));
             }
 
             newExpression = new ObjectIndexExpr(subExpression, indexExpression);
@@ -763,7 +741,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
-                issues.Add(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
             }
 
             return true;
@@ -777,7 +755,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            term = new Identifier(advance().Lexeme!);
+            term = new Identifier(getCurrentAndAdvance().Lexeme!);
             return true;
         }
 
@@ -789,7 +767,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            term = new Literal(advance());
+            term = new Literal(getCurrentAndAdvance());
             return true;
         }
 
@@ -801,7 +779,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var typeToken = advance();
+            var typeToken = getCurrentAndAdvance();
 
             if (checkType(TokenType.LEFT_PAREN))
             {
@@ -809,7 +787,7 @@ namespace Application.Infrastructure.SourceParser
 
                 if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
                 {
-                    issues.Add(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
                 term = new ConstructiorCallExpr(typeToken.Lexeme!, arguments);
@@ -822,7 +800,7 @@ namespace Application.Infrastructure.SourceParser
 
         private bool checkType(params TokenType[] types)
         {
-            if (types.Contains(_lexer.Peek().Type))
+            if (types.Contains(_lexer.Current.Type))
             {
                 return true;
             }
@@ -832,7 +810,7 @@ namespace Application.Infrastructure.SourceParser
 
         private bool checkTypeAndAdvance(params TokenType[] types)
         {
-            if (types.Contains(_lexer.Peek().Type))
+            if (types.Contains(_lexer.Current.Type))
             {
                 advance();
                 return true;
@@ -841,7 +819,27 @@ namespace Application.Infrastructure.SourceParser
             return false;
         }
 
-        private Token current => _lexer.Peek();
-        private Token advance() => _lexer.Read();
+        private Token current => _lexer.Current;
+        private bool advance() => _lexer.Advance();
+
+        private Token getCurrentAndAdvance()
+        {
+            Token token = current;
+            advance();
+            return token;
+        }
+
+        private void skipSemicolon()
+        {
+            skipToken(TokenType.SEMICOLON);
+        }
+
+        private void skipToken(TokenType tokenType)
+        {
+            if (!checkTypeAndAdvance(tokenType))
+            {
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.SEMICOLON));
+            }
+        }
     }
 }
