@@ -21,11 +21,11 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(FunctionDecl functionDecl, int depth)
         {
-            write(depth, $"FUNCTION: {functionDecl.Type} {functionDecl.Name}");
+            write(depth, $"FUNCTION {functionDecl.Type} {functionDecl.Name}");
 
             foreach (var param in functionDecl.Parameters)
             {
-                param.Accept(this, depth);
+                param.Accept(this, depth + 1);
             }
 
             functionDecl.Block.Accept(this, depth + 1);
@@ -94,9 +94,9 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"THEN");
             node.ThenStatement.Accept(this, depth + 1);
 
-            write(depth, $"ELSE");
             if (node.ElseStatement != null)
             {
+                write(depth, $"ELSE");
                 node.Accept(this, depth + 1);
             }
         }
@@ -115,7 +115,7 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"FINANCIAL TO  {node.Operator.ToString()}");
             node.AccountExpression.Accept(this, depth + 1);
 
-            write(depth, $"FINANCIAL TO  VALUE");
+            write(depth + 1, $"FINANCIAL TO  VALUE");
             node.ValueExpression.Accept(this, depth + 1);
         }
 
@@ -124,12 +124,12 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"FINANCIAL FROM {node.Operator.ToString()}");
             node.AccountFromExpression.Accept(this, depth + 1);
 
-            write(depth, $"FINANCIAL FROM VALUE");
+            write(depth + 1, $"FINANCIAL FROM VALUE");
             node.ValueExpression.Accept(this, depth + 1);
 
             if (node.AccountToExpression != null)
             {
-                write(depth, $"FINANCIAL FROM TO ACCOUNT");
+                write(depth + 1, $"FINANCIAL FROM TO ACCOUNT");
                 node.AccountToExpression.Accept(this, depth + 1);
             }
         }
@@ -192,7 +192,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var item in node.Operands)
             {
-                write(depth, $"{item.Item1}");
+                write(depth + 1, $"{item.Item1}");
                 item.Item2.Accept(this, depth + 1);
             }
         }
@@ -204,7 +204,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var item in node.Operands)
             {
-                write(depth, $"{item.Item1}");
+                write(depth + 1, $"{item.Item1}");
                 item.Item2.Accept(this, depth + 1);
             }
         }
@@ -220,7 +220,7 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"CONVERSION");
             node.OryginalExpression.Accept(this, depth + 1);
 
-            write(depth, $"TO");
+            write(depth + 1, $"TO");
             node.TypeExpression.Accept(this, depth + 1);
         }
 
@@ -242,7 +242,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var item in node.Operands)
             {
-                write(depth, $"{item.Item1}");
+                write(depth + 1, $"{item.Item1}");
                 item.Item2.Accept(this, depth + 1);
             }
         }
@@ -252,7 +252,7 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"PRCT");
             node.FirstOperand.Accept(this, depth + 1);
 
-            write(depth, $"OF");
+            write(depth + 1, $"OF");
             node.SecondOperand.Accept(this, depth + 1);
         }
 
@@ -277,7 +277,7 @@ namespace Application.Infrastructure.Presenters
             write(depth, $"INDEX OF");
             node.Object.Accept(this, depth + 1);
 
-            write(depth, $"INDEX EXPR");
+            write(depth + 1, $"INDEX EXPR");
             node.IndexExpression.Accept(this, depth + 1);
         }
 

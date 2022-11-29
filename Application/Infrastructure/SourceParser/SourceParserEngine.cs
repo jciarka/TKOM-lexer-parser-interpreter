@@ -99,12 +99,12 @@ namespace Application.Infrastructure.SourceParser
             }
 
             // block
-            if (!tryParseBlock(out BlockStmt? block))
+            if (!tryParseBlock(out StatementBase? block) || block!.GetType() != typeof(BlockStmt))
             {
                 throw new InvalidStatementException(current);
             }
 
-            function = new FunctionDecl(type, name, parameters, block!);
+            function = new FunctionDecl(type, name, parameters, (BlockStmt)block!);
             return true;
         }
 
@@ -148,7 +148,7 @@ namespace Application.Infrastructure.SourceParser
             return new Parameter(type, identifier);
         }
 
-        private bool tryParseBlock(out BlockStmt? block)
+        private bool tryParseBlock(out StatementBase? block)
         {
             var statements = new List<StatementBase>();
 
@@ -191,7 +191,8 @@ namespace Application.Infrastructure.SourceParser
                     tryParseForeachStmt(out statement) ||
                     tryParseDeclarationStmt(out statement) ||
                     tryParseReturnStmt(out statement) ||
-                    tryParseExpressionStmt(out statement)) // expression, assignment, financial operations
+                    tryParseBlock(out statement) || // expression, assignment, financial operations
+                    tryParseExpressionStmt(out statement))
                     return true;
                 else
                     _errorHandler.HandleError(new InvalidStatementException(current));
@@ -516,7 +517,7 @@ namespace Application.Infrastructure.SourceParser
             var lExpression = parseComparativeExpr();
             var rExpressions = new List<ExpressionBase>();
 
-            while (checkTypeAndAdvance(TokenType.OR))
+            while (checkTypeAndAdvance(TokenType.AND))
             {
                 rExpressions.Add(parseComparativeExpr());
             }
@@ -567,7 +568,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new ComparativeExpr(lExpression, rExpressions);
+                return new AdditiveExpr(lExpression, rExpressions);
             }
 
             return lExpression;
@@ -586,7 +587,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new ComparativeExpr(lExpression, rExpressions);
+                return new MultiplicativeExpr(lExpression, rExpressions);
             }
 
             return lExpression;
@@ -704,7 +705,7 @@ namespace Application.Infrastructure.SourceParser
         {
             var arguments = new List<ArgumentBase>();
 
-            while (checkType(TokenType.TYPE))
+            while (!checkType(TokenType.RIGHT_PAREN, TokenType.EOF))
             {
                 arguments.Add(parseArgument());
 
@@ -767,7 +768,7 @@ namespace Application.Infrastructure.SourceParser
 
             var parameter = new Parameter(type, name);
 
-            if (tryParseBlock(out BlockStmt? block))
+            if (tryParseBlock(out StatementBase? block))
             {
                 lambda = new Lambda(parameter, block!);
             }
@@ -795,7 +796,7 @@ namespace Application.Infrastructure.SourceParser
             {
                 return term!;
             }
-            else if (tryParseIdentifier(out term))
+            else if (tryParseIdentifierOrFunctionCall(out term))
             {
                 return term!;
             }
@@ -821,7 +822,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseIdentifier(out ExpressionBase? term)
+        private bool tryParseIdentifierOrFunctionCall(out ExpressionBase? term)
         {
             if (!checkType(TokenType.IDENTIFIER))
             {
@@ -829,7 +830,22 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            term = new Identifier(getCurrentAndAdvance().Lexeme!);
+            var name = getCurrentAndAdvance().Lexeme!;
+
+            if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
+            {
+                var arguments = parseArguments();
+
+                if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
+                {
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
+                }
+
+                term = new FunctionCallExpr(name, arguments);
+                return true;
+            }
+
+            term = new Identifier(name);
             return true;
         }
 
