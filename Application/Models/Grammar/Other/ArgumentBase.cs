@@ -1,6 +1,9 @@
-﻿namespace Application.Models.Grammar
+﻿using Application.Infrastructure.Presenters;
+
+namespace Application.Models.Grammar
 {
-    public class ArgumentBase : GrammarRuleBase
+    public abstract class ArgumentBase : GrammarRuleBase
     {
+        public abstract void Accept(IPresenterVisitor visitor, int v);
     }
 }

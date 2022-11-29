@@ -1,4 +1,6 @@
-﻿namespace Application.Models.Grammar
+﻿using Application.Infrastructure.Presenters;
+
+namespace Application.Models.Grammar
 {
     public class FunctionCallExpr : TermBase
     {
@@ -9,6 +11,11 @@
         {
             Name = name;
             Arguments = arguments;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

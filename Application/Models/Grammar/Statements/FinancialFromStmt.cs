@@ -1,4 +1,5 @@
-﻿using Application.Models.Tokens;
+﻿using Application.Infrastructure.Presenters;
+using Application.Models.Tokens;
 using System.Linq.Expressions;
 
 namespace Application.Models.Grammar
@@ -17,5 +18,11 @@ namespace Application.Models.Grammar
             ValueExpression = valueExpression;
             AccountToExpression = accountToExpression;
         }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
+        }
+
     }
 }

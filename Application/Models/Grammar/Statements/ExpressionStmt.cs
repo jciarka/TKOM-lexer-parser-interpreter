@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Application.Infrastructure.Presenters;
+using System.Linq.Expressions;
 
 namespace Application.Models.Grammar
 {
@@ -9,6 +10,11 @@ namespace Application.Models.Grammar
         public ExpressionStmt(ExpressionBase rValue)
         {
             RightExpression = rValue;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Application.Models.Grammar
+﻿using Application.Infrastructure.Presenters;
+
+namespace Application.Models.Grammar
 {
     public class BlockStmt : StatementBase
     {
@@ -7,6 +9,11 @@
         public BlockStmt(IEnumerable<StatementBase> statements)
         {
             Statements = statements;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Application.Models.Tokens;
+﻿using Application.Infrastructure.Presenters;
+using Application.Models.Tokens;
 
 namespace Application.Models.Grammar
 {
@@ -11,6 +12,11 @@ namespace Application.Models.Grammar
         {
             FirstOperand = firstOperand;
             Operands = operands;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

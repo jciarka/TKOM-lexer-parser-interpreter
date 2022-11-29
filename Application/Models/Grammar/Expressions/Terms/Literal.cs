@@ -1,4 +1,5 @@
-﻿using Application.Models.Tokens;
+﻿using Application.Infrastructure.Presenters;
+using Application.Models.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,11 @@ namespace Application.Models.Grammar
             IntValue = intValue;
             DecimalValue = decimalValue;
             Type = type;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

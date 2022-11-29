@@ -1,4 +1,6 @@
-﻿namespace Application.Models.Grammar
+﻿using Application.Infrastructure.Presenters;
+
+namespace Application.Models.Grammar
 {
     public class ConversionExpr : ExpressionBase
     {
@@ -9,6 +11,11 @@
         {
             OryginalExpression = oryginalExpression;
             TypeExpression = typeExpression;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Application.Models.Grammar
+﻿using Application.Infrastructure.Presenters;
+
+namespace Application.Models.Grammar
 {
     public class Lambda : ArgumentBase
     {
@@ -9,6 +11,11 @@
         {
             Parameter = parameter;
             Stmt = stmt;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

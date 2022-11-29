@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.Infrastructure.Presenters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,11 @@ namespace Application.Models.Grammar
         {
             Identifier = identifier;
         }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
+        }
     }
 
     public class PropertyAssignmentStatement : AssignmentStatementBase
@@ -34,6 +40,11 @@ namespace Application.Models.Grammar
         {
             Property = property;
         }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
+        }
     }
 
     public class IndexAssignmentStatement : AssignmentStatementBase
@@ -43,6 +54,11 @@ namespace Application.Models.Grammar
         public IndexAssignmentStatement(ObjectIndexExpr indexExpr, ExpressionBase expression) : base(expression)
         {
             IndexExpr = indexExpr;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

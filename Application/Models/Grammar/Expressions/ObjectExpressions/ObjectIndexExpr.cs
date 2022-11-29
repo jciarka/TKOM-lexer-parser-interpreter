@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.Infrastructure.Presenters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,11 @@ namespace Application.Models.Grammar
         {
             Object = @object;
             IndexExpression = indexExpression;
+        }
+
+        public override void Accept(IPresenterVisitor visitor, int v)
+        {
+            visitor.Visit(this, v);
         }
     }
 }

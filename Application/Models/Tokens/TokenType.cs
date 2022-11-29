@@ -67,6 +67,7 @@ namespace Application.Models.Tokens
         IDENTIFIER,
         EOF,
         LAMBDA,
-        AND
+        AND,
+        BOOL
     }
 }

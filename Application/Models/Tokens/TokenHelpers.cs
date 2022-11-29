@@ -60,11 +60,9 @@ namespace Application.Models.Tokens
             {"in" ,TokenType.IN },
             { "and", TokenType.AND },
             { "var", TokenType.VAR },
-            { "int", TokenType.INT },
             { "else", TokenType.ELSE },
             { "void", TokenType.VOID },
             { "null", TokenType.NULL },
-            { "char",TokenType.CHAR },
             { "print", TokenType.PRINT },
             { "while", TokenType.WHILE },
             { "double", TokenType.DOUBLE },
@@ -81,10 +79,8 @@ namespace Application.Models.Tokens
 
         public static IDictionary<string, TokenType> TypeMap => new Dictionary<string, TokenType>()
         {
-            { "int", TokenType.INT },
             { "void" , TokenType.VOID },
             { "null" , TokenType.NULL },
-            { "char", TokenType.CHAR  },
             { "while", TokenType.WHILE  },
             { "double", TokenType.DOUBLE  },
         };
