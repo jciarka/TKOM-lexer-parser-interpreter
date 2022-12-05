@@ -14,6 +14,7 @@ namespace Application.Models.Types
         STRING,
         ACCOUNT,
         TYPE,
+        COLLECTION,
         EXTERNAL
     }
 }

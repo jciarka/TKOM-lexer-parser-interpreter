@@ -3,6 +3,7 @@ using Application.Infrastructure.Lekser;
 using Application.Models.Exceptions;
 using Application.Models.Exceptions.SourseParser;
 using Application.Models.Grammar;
+using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Tokens;
 using System;
 using System.Collections.Generic;
@@ -65,7 +66,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var type = getCurrentAndAdvance().Lexeme!;
+            TypeBase? type = checkTypeAndAdvance(TokenType.VOID) ? null : parseType();
 
             // function name
             if (!checkType(TokenType.IDENTIFIER))
@@ -104,8 +105,37 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
             }
 
-            function = new FunctionDecl(type, name, parameters, (BlockStmt)block!);
+            function = new FunctionDecl(name, parameters, (BlockStmt)block!, type);
             return true;
+        }
+
+        private TypeBase parseType()
+        {
+            if (!checkType(TokenType.TYPE, TokenType.TYPE))
+            {
+                throw new UnexpectedTokenException(current, TokenType.TYPE);
+            }
+
+            var basicTypeToken = getCurrentAndAdvance();
+
+            if (checkTypeAndAdvance(TokenType.LESS))
+            {
+                if (!checkType(TokenType.TYPE, TokenType.TYPE))
+                {
+                    throw new UnexpectedTokenException(current, TokenType.TYPE);
+                }
+
+                var parametrisingType = parseType();
+
+                if (!checkTypeAndAdvance(TokenType.GREATER))
+                {
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.GREATER));
+                }
+
+                return new GenericType(basicTypeToken.Lexeme!, parametrisingType);
+            }
+
+            return new BasicType(basicTypeToken.Lexeme!);
         }
 
         private IEnumerable<Parameter> parseParameters()
@@ -136,7 +166,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var type = getCurrentAndAdvance().Lexeme!;
+            var type = parseType();
 
             if (!checkType(TokenType.IDENTIFIER))
             {
@@ -462,8 +492,8 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var typeToken = getCurrentAndAdvance();
-            var type = typeToken.Type != TokenType.VAR ? typeToken.Lexeme! : null;
+            var typeToken = current;
+            var type = checkTypeAndAdvance(TokenType.VAR) ? null : parseType();
 
             if (current.Type != TokenType.IDENTIFIER)
             {
@@ -472,7 +502,7 @@ namespace Application.Infrastructure.SourceParser
 
             var name = getCurrentAndAdvance().Lexeme!;
 
-            if (typeToken.Type == TokenType.VAR && !checkType(TokenType.EQUAL)) // var must be assgned
+            if (type == null && !checkType(TokenType.EQUAL)) // var must be assgned
             {
                 throw new UnknownTypeOnVariableDeclaration(typeToken);
             }
@@ -753,7 +783,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new MissingTokenException(current, TokenType.TYPE);
             }
 
-            var type = getCurrentAndAdvance().Lexeme!;
+            var type = parseType();
 
             if (!checkType(TokenType.IDENTIFIER))
             {
@@ -885,7 +915,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var typeToken = getCurrentAndAdvance();
+            var type = parseType();
 
             if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
@@ -896,11 +926,11 @@ namespace Application.Infrastructure.SourceParser
                     _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
-                term = new ConstructiorCallExpr(typeToken.Lexeme!, arguments);
+                term = new ConstructiorCallExpr(type, arguments);
                 return true;
             }
 
-            term = new Literal("Type", stringValue: typeToken.Lexeme!);
+            term = new Literal(type);
             return true;
         }
 

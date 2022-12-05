@@ -1,4 +1,5 @@
 ﻿using Application.Models.Grammar;
+using Application.Models.Grammar.Expressions.Terms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,5 +48,9 @@ namespace Application.Infrastructure.Presenters
         void Visit(BracedExprTerm bracedExprTerm, int v);
 
         void Visit(Literal literal, int v);
+
+        void Visit(BasicType literal, int v);
+        void Visit(GenericType literal, int v);
+
     }
 }

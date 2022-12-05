@@ -1,4 +1,5 @@
 ﻿using Application.Models.Grammar;
+using Application.Models.Grammar.Expressions.Terms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,17 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(FunctionDecl functionDecl, int depth)
         {
-            write(depth, $"FUNCTION {functionDecl.Type} {functionDecl.Name}");
+            write(depth, $"FUNCTION {functionDecl.Name}");
+
+            if (functionDecl.Type != null)
+            {
+                write(depth + 1, $"RETURN TYPE");
+                functionDecl.Type!.Accept(this, depth + 2);
+            }
+            else
+            {
+                write(depth + 1, $"RETURN TYPE is VOID");
+            }
 
             foreach (var param in functionDecl.Parameters)
             {
@@ -67,12 +78,22 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(DeclarationStmt node, int depth)
         {
-            write(depth, $"DECLARATION: {node.Type} {node.Identifier.Name}");
+            write(depth, $"DECLARATION {node.Identifier.Name}");
+
+            if (node.Type != null)
+            {
+                write(depth + 1, $"DECLARATION TYPE");
+                node.Type!.Accept(this, depth + 2);
+            }
+            else
+            {
+                write(depth + 1, $"DECLARATION TYPE is VAR");
+            }
 
             if (node.Expression != null)
             {
-                write(depth, $"DECLARATION EXPRESSION");
-                node.Expression!.Accept(this, depth + 1);
+                write(depth + 1, $"DECLARATION EXPRESSION");
+                node.Expression!.Accept(this, depth + 2);
             }
         }
 
@@ -108,11 +129,15 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(ForeachStmt node, int depth)
         {
-            write(depth, $"FOREACH {node.Parameter.Type} {node.Parameter.Identifier}");
-            node.CollectionExpression.Accept(this, depth + 1);
+            write(depth, $"FOREACH");
+            write(depth + 1, $"FOREACH PARAMETER");
+            node.Parameter.Accept(this, depth + 2);
 
-            write(depth, $"FOREACH STATEMENT");
-            node.Statement.Accept(this, depth + 1);
+            write(depth + 1, $"FOREACH COLLECTION");
+            node.CollectionExpression.Accept(this, depth + 2);
+
+            write(depth + 1, $"FOREACH STATEMENT");
+            node.Statement.Accept(this, depth + 2);
         }
 
         public void Visit(FinancialToStmt node, int depth)
@@ -141,7 +166,9 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(Parameter node, int depth)
         {
-            write(depth, $"PARAMETER {node.Type} {node.Identifier}");
+            write(depth, $"PARAMETER {node.Identifier}");
+            write(depth + 1, $"PARAMETER TYPE");
+            node.Type.Accept(this, depth + 2);
         }
 
         public void Visit(Lambda node, int depth)
@@ -263,7 +290,9 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(ConstructiorCallExpr node, int depth)
         {
-            write(depth, $"CONSTRUCTOR {node.Type}");
+            write(depth, $"CONSTRUCTOR");
+            write(depth + 1, $"CONSTRUCTOR TYPE");
+            node.Type.Accept(this, depth + 2);
 
             foreach (var item in node.Arguments)
             {
@@ -306,7 +335,17 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(Literal node, int depth)
         {
-            write(depth, $"LITERAL {node.Type} VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
+            write(depth, $"LITERAL");
+
+            if (node.TypeValue == null)
+            {
+                write(depth + 1, $"LITERAL VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
+            }
+            else
+            {
+                write(depth + 1, $"LITERAL VALUE");
+                node.TypeValue.Accept(this, depth + 2);
+            }
         }
 
         private static void writeIndentation(int depth)
@@ -318,6 +357,17 @@ namespace Application.Infrastructure.Presenters
         {
             writeIndentation(depth);
             Console.WriteLine(text);
+        }
+
+        public void Visit(BasicType type, int depth)
+        {
+            write(depth, $"Type {type.Name}");
+        }
+
+        public void Visit(GenericType type, int depth)
+        {
+            write(depth, $"GenericType of {type.Name} parametrised by");
+            type.ParametrisingType.Accept(this, depth + 1);
         }
     }
 }

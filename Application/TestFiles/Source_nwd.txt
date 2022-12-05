@@ -93,4 +93,8 @@ void main()
     Account last = Accounts.last(lambda Account x => x.currency == PLN);
     Collection<Account> usdAccounts = Accounts.where(lambda
                                               Account x => x.currecy == USD);
+
+    usdAccounts = Accounts.where(lambda Account x => {
+        return x.currecy == USD
+    });
 }

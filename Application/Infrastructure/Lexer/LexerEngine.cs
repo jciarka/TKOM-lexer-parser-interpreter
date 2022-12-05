@@ -506,6 +506,7 @@ namespace Application.Infrastructure.Lekser
                 Lexeme = lexeme,
                 Type = TokenHelpers.KeywordsMap[lexeme],
                 Position = _currentPosition,
+                ValueType = "Type"
             };
 
             return true;

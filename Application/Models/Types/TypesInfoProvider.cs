@@ -51,6 +51,12 @@ namespace Application.Models.Types
                 Type = TypeEnum.ACCOUNT,
                 Lexeme = "Account",
                 DefaultValue = null,
+            },
+            new TypeDescription()
+            {
+                Type = TypeEnum.COLLECTION,
+                Lexeme = "Collection",
+                DefaultValue = null,
             }
         };
 

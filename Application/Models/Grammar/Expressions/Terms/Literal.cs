@@ -1,4 +1,5 @@
 ﻿using Application.Infrastructure.Presenters;
+using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Tokens;
 using System;
 using System.Collections.Generic;
@@ -15,14 +16,21 @@ namespace Application.Models.Grammar
         public string? StringValue { get; set; }
         public int? IntValue { get; set; }
         public decimal? DecimalValue { get; set; }
+        public TypeBase? TypeValue { get; set; }
 
         public Literal(Token token)
         {
+            if (token.Type == TokenType.TYPE)
+            {
+                throw new NotImplementedException();
+            }
+
             BoolValue = token.BoolValue;
-            StringValue = token.StringValue;
             IntValue = token.IntValue;
             DecimalValue = token.DecimalValue;
             Type = token.ValueType!;
+            StringValue = token.StringValue;
+            TypeValue = null;
         }
 
         public Literal(Token numericLiteral, string currencyType)
@@ -38,6 +46,12 @@ namespace Application.Models.Grammar
             IntValue = intValue;
             DecimalValue = decimalValue;
             Type = type;
+        }
+
+        public Literal(TypeBase type)
+        {
+            TypeValue = type;
+            Type = "Type";
         }
 
         public override void Accept(IPresenterVisitor visitor, int v)

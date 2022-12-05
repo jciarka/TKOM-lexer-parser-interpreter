@@ -1,13 +1,14 @@
 ﻿using Application.Infrastructure.Presenters;
+using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
     public class ConstructiorCallExpr : TermBase
     {
-        public string Type { get; }
+        public TypeBase Type { get; }
         public IEnumerable<ArgumentBase> Arguments { get; }
 
-        public ConstructiorCallExpr(string type, IEnumerable<ArgumentBase> arguments)
+        public ConstructiorCallExpr(TypeBase type, IEnumerable<ArgumentBase> arguments)
         {
             Type = type;
             Arguments = arguments;
