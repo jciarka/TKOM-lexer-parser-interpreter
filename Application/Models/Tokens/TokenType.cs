@@ -55,7 +55,6 @@ namespace Application.Models.Tokens
         DOUBLE,
         FOREACH,
         CHAR,
-        PRINT,
         RETURN,
         TO,
         VOID,

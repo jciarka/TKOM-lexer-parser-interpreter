@@ -323,16 +323,19 @@ namespace Application.Infrastructure.SourceParser
 
             if (tryParseAssignmentExpression(expression, out statement))
             {
+                skipSemicolon();
                 return true;
             }
 
             if (tryParseFinancialFrom(expression, out statement))
             {
+                skipSemicolon();
                 return true;
             }
 
             if (tryParseFinancialTo(expression, out statement))
             {
+                skipSemicolon();
                 return true;
             }
 
@@ -684,7 +687,7 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseObjectIndexExpression(ExpressionBase subExpression, out ObjectExprBase? newExpression)
         {
-            if (!checkTypeAndAdvance(TokenType.LEFT_BRACE))
+            if (!checkTypeAndAdvance(TokenType.LEFT_BRACKET))
             {
                 newExpression = null;
                 return false;
@@ -692,9 +695,9 @@ namespace Application.Infrastructure.SourceParser
 
             var indexExpression = parseExpression();
 
-            if (!checkTypeAndAdvance(TokenType.RIGHT_BRACE))
+            if (!checkTypeAndAdvance(TokenType.RIGHT_BRACKET))
             {
-                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_BRACE));
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_BRACKET));
             }
 
             newExpression = new ObjectIndexExpr(subExpression, indexExpression);
@@ -739,13 +742,11 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseLambdaArgument(out Lambda? lambda)
         {
-            if (!checkType(TokenType.LAMBDA))
+            if (!checkTypeAndAdvance(TokenType.LAMBDA))
             {
                 lambda = null;
                 return false;
             }
-
-            advance(); // Lambda
 
             if (!checkType(TokenType.TYPE))
             {
@@ -767,6 +768,11 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var parameter = new Parameter(type, name);
+
+            if (!checkTypeAndAdvance(TokenType.ARROW))
+            {
+                _errorHandler.HandleError(new MissingTokenException(current, TokenType.ARROW));
+            }
 
             if (tryParseBlock(out StatementBase? block))
             {
@@ -881,7 +887,7 @@ namespace Application.Infrastructure.SourceParser
 
             var typeToken = getCurrentAndAdvance();
 
-            if (checkType(TokenType.LEFT_PAREN))
+            if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
                 var arguments = parseArguments();
 

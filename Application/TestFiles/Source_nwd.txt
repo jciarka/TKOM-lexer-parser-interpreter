@@ -20,3 +20,77 @@ int factorial(int a)
 
     return a * factorial(a-1);
 }
+
+void main()
+{	
+    int x = 3;
+    int y = 10;
+
+    print("NWD 3 i 10 wynosi = ", nwd(x, y));  # NWD 3 i 10 wynosi = 1
+    print("Silnia 3 wynosi = ", factorial(x, y));  # Silnia 3 = 6
+
+    var a = Account(PLN, 100000);
+
+    # Zmniejszenie stanu konta o wartość
+    a >> 100CHF;
+    a >> 100 to CHF;
+    a >> getAmount() to Currency(getCurrenctStr());
+
+    # Zmniejszenie stanu konta o procent
+    a %> 0.1;
+    a %> getPrct();
+
+    # Zwiększenie stanu konta o wartość
+    a << 100CHF;
+    a << 100 to CHF;
+    a << getAmount() to Currency(getCurrenctStr());
+
+    # Zwiększenie stanu konta o procent
+    a <% 0.1;
+    a <% getPrct();
+
+    # Przelew między kontami na wartość
+    a >> 100CHF >> b;
+    a >> 100 to CHF >> b;
+    a >> getAmount() to Currency(getCurrenctStr()) >> b;
+
+
+    # Przelew między kontami na procent pierwszego z kont
+    a %> 0.1 >> b;
+    a %> getPrct() >> b;
+
+    # wszystkie opisane powyżej operacje zwracaj obiekt Account
+    # zawierający informację o kwocie operacji pieniężnej
+    a %> 0.1;
+
+    # Obliczenie procentowej wartości z konta
+    Account prctAmount = a % 0.1;
+    Account prctAmount = a % getPrct();
+
+    var a = Account(PLN, 100000, "NAZWA KONTA");
+    print(a.name); # NAZWA KONTA 
+    print(a.value); # 1000000 (typ decimal)
+    print(a.currency); # PLN (typ Type)
+    print(a.balance); # 1000000 PLN (typ PLN)
+
+    # Dodawanie
+    accounts.Add(Account(PLN, 120));
+    accounts.Add(Account(USD, 10));
+
+    # Dostęp indeksowy
+    var account = Accounts[1];
+    PLN balance = Accounts[1].balance;
+
+    # Modyfikacje na indeksie
+    accounts[1] = Account(USD, 0);
+    accounts[1].name = "TESTOWE";
+
+    # Usuwanie
+    Accounts.delete(1);
+
+    # Przeszukiwanie z delegatem
+    Account first = Accounts.first(lambda Account x => x.currency == USD);
+    Account last = Accounts.last(lambda Account x => x.currency == PLN);
+    Collection<Account> usdAccounts = Accounts.where(lambda
+                                              Account x => x.currecy == USD);
+}

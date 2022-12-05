@@ -49,20 +49,25 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(PropertyAssignmentStatement node, int depth)
         {
-            write(depth, $"PROP ASSIGN: {node.Property}");
+            write(depth, $"PROP ASSIGN");
+            write(depth + 1, $"PROPERTY");
+            node.Property.Accept(this, depth + 1);
+            write(depth + 1, $"VALUE");
             node.Expression.Accept(this, depth + 1);
         }
 
         public void Visit(IndexAssignmentStatement node, int depth)
         {
             write(depth, $"INDEX ASSIGN");
+            write(depth + 1, $"OBJECT[INDEX]");
             node.IndexExpr.Accept(this, depth + 1);
+            write(depth + 1, $"VALUE");
             node.Expression.Accept(this, depth + 1);
         }
 
         public void Visit(DeclarationStmt node, int depth)
         {
-            write(depth, $"DECLARATION: {node.Type} {node.Identifier}");
+            write(depth, $"DECLARATION: {node.Type} {node.Identifier.Name}");
 
             if (node.Expression != null)
             {
