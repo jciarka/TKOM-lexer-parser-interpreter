@@ -15,5 +15,10 @@ namespace Application.Models.Grammar
         {
             visitor.Visit(this, v);
         }
+
+        internal void Accept(TypingAnalyserVisitor typingAnalyserVisitor)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

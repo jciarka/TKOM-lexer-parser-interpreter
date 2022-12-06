@@ -10,7 +10,25 @@ namespace Application.Models.Grammar
 {
     public class DeclarationStmt : StatementBase
     {
-        public TypeBase? Type { get; }
+        private TypeBase? _type;
+        public TypeBase? Type
+        {
+            get
+            {
+                return _type;
+            }
+
+            set
+            {
+                if (Type == null)
+                {
+                    throw new NotImplementedException();
+                }
+
+                Type = value;
+            }
+        }
+
         public Identifier Identifier { get; }
         public ExpressionBase? Expression { get; }
 

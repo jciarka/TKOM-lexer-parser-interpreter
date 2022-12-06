@@ -18,6 +18,11 @@ namespace Application.Models.Grammar
             Block = block;
         }
 
+        internal TypeBase? Accept(TypingAnalyserVisitor typingAnalyserVisitor)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
