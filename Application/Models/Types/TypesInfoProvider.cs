@@ -8,60 +8,26 @@ namespace Application.Models.Types
 {
     public class TypesInfoProvider
     {
-        private readonly IEnumerable<TypeDescription> _currencyTypes;
+        private readonly IEnumerable<string> _currencyTypes;
 
         public TypesInfoProvider(IEnumerable<string>? currencyTypes = null)
         {
-            _currencyTypes = currencyTypes?.Select(x => new TypeDescription()
-            {
-                Type = TypeEnum.EXTERNAL,
-                DefaultValue = 0,
-                Lexeme = x.ToUpper(),
-            }) ?? new List<TypeDescription>();
+            _currencyTypes = currencyTypes ?? new List<string>();
         }
 
-        public static IEnumerable<TypeDescription> StandardTypes => new List<TypeDescription>()
+        public static Dictionary<string, TypeEnum> StandardTypes => new()
         {
-            new TypeDescription()
-            {
-                Type = TypeEnum.BOOL,
-                Lexeme = "bool",
-                DefaultValue = false,
-            },
-            new TypeDescription()
-            {
-                Type = TypeEnum.INT,
-                Lexeme = "int",
-                DefaultValue = 0,
-            },
-            new TypeDescription()
-            {
-                Type = TypeEnum.DECIMAL,
-                Lexeme = "decimal",
-                DefaultValue = 0M,
-            },
-            new TypeDescription()
-            {
-                Type = TypeEnum.STRING,
-                Lexeme = "string",
-                DefaultValue = (string?)null,
-            },
-            new TypeDescription()
-            {
-                Type = TypeEnum.ACCOUNT,
-                Lexeme = "Account",
-                DefaultValue = null,
-            },
-            new TypeDescription()
-            {
-                Type = TypeEnum.COLLECTION,
-                Lexeme = "Collection",
-                DefaultValue = null,
-            }
+            { TypeName.BOOL, TypeEnum.BOOL },
+            { TypeName.INT, TypeEnum.INT },
+            { TypeName.DECIMAL, TypeEnum.DECIMAL },
+            { TypeName.STRING, TypeEnum.STRING },
+            { TypeName.ACCOUNT, TypeEnum.ACCOUNT },
+            { TypeName.COLLECTION, TypeEnum.COLLECTION }
         };
 
-        public IEnumerable<TypeDescription> ExternalTypes => _currencyTypes;
+        public Dictionary<string, TypeEnum> CurrencyTypes => _currencyTypes.ToDictionary(x => x, x => TypeEnum.CURRENCY);
 
-        public IEnumerable<TypeDescription> Types => StandardTypes.Union(_currencyTypes);
+        public Dictionary<string, TypeEnum> Types => StandardTypes.Union(CurrencyTypes)
+                                                                  .ToDictionary(x => x.Key, x => x.Value);
     }
 }

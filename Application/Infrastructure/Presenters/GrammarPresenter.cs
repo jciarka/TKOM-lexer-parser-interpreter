@@ -1,5 +1,6 @@
 ﻿using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
+using Application.Models.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -336,15 +337,14 @@ namespace Application.Infrastructure.Presenters
         public void Visit(Literal node, int depth)
         {
             write(depth, $"LITERAL");
-
-            if (node.TypeValue == null)
+            if (node.Type.Type == TypeEnum.TYPE)
             {
-                write(depth + 1, $"LITERAL VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
+                write(depth + 1, $"LITERAL TYPE");
+                node.TypeValue!.Accept(this, depth + 2);
             }
             else
             {
-                write(depth + 1, $"LITERAL VALUE");
-                node.TypeValue.Accept(this, depth + 2);
+                write(depth + 1, $"LITERAL VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
             }
         }
 
@@ -361,12 +361,12 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(BasicType type, int depth)
         {
-            write(depth, $"Type {type.Name}");
+            write(depth, $"Type {type.Name} ({type.Type})");
         }
 
         public void Visit(GenericType type, int depth)
         {
-            write(depth, $"GenericType of {type.Name} parametrised by");
+            write(depth, $"Type of {type.Name} ({type.Type}) parametrised by");
             type.ParametrisingType.Accept(this, depth + 1);
         }
     }

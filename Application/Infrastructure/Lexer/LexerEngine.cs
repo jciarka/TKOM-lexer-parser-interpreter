@@ -179,17 +179,14 @@ namespace Application.Infrastructure.Lekser
             try
             {
                 var valueRepresentation = buildNumericPartOfNumber(stringBuilder, out var value);
-                var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder, out var declaredTypeLexeme);
+                var declaredRepresentation = buildTypeDeclarationPartOfNumber(stringBuilder);
+                var finalRepresentation = declaredRepresentation ?? valueRepresentation;
 
                 letter = _reader.Current;
-
                 if (char.IsLetterOrDigit(letter))
                 {
                     throw new InvalidLiteralException(stringBuilder.ToString(), getCharacterPositionDetails());
                 }
-
-                var finalRepresentation = declaredRepresentation ?? valueRepresentation;
-                var finalType = declaredTypeLexeme ?? (finalRepresentation == TypeEnum.INT ? "int" : "decimal");
 
                 if (finalRepresentation == TypeEnum.INT)
                 {
@@ -201,7 +198,7 @@ namespace Application.Infrastructure.Lekser
                             Type = TokenType.LITERAL,
                             Position = _currentPosition,
                             IntValue = (int)value,
-                            ValueType = finalType
+                            ValueType = TypeName.INT
                         };
                     }
                 }
@@ -213,7 +210,7 @@ namespace Application.Infrastructure.Lekser
                         Type = TokenType.LITERAL,
                         Position = _currentPosition,
                         DecimalValue = value,
-                        ValueType = finalType
+                        ValueType = TypeName.DECIMAL,
                     };
                 }
 
@@ -277,12 +274,11 @@ namespace Application.Infrastructure.Lekser
             return TypeEnum.DECIMAL;
         }
 
-        private TypeEnum? buildTypeDeclarationPartOfNumber(StringBuilder builder, out string? typeLexem)
+        private TypeEnum? buildTypeDeclarationPartOfNumber(StringBuilder builder)
         {
             // type EMPTY
             if (!char.IsLetter(_reader.Current))
             {
-                typeLexem = null;
                 return null;
             }
 
@@ -291,40 +287,12 @@ namespace Application.Infrastructure.Lekser
             {
 
                 builder.Append(_reader.Current);
-                typeLexem = "decimal";
-
                 _reader.Advance();
 
                 return TypeEnum.DECIMAL;
             }
 
-            // type EXTERNAL
-            var typeBuilder = new StringBuilder();
-
-            while (char.IsLetterOrDigit(_reader.Current))
-            {
-
-                builder.Append(_reader.Current);
-                typeBuilder.Append(_reader.Current);
-                _reader.Advance();
-            }
-
-            var match = _options.TypesInfo!.ExternalTypes.Where(x => x.Lexeme!.Equals(typeBuilder.ToString()));
-
-            if (!match.Any())
-            {
-                throw new InvalidLiteralException(typeBuilder.ToString(), getCharacterPositionDetails());
-            }
-
-            typeLexem = match.First().Lexeme!;
-
-            if (char.IsLetterOrDigit(_reader.Current))
-            {
-                throw new InvalidLiteralException(typeBuilder.ToString(), getCharacterPositionDetails());
-            }
-
-            // external typehas decimal representation
-            return TypeEnum.DECIMAL;
+            throw new InvalidLiteralException(builder.ToString(), _currentPosition);
         }
 
         /// <summary>
@@ -403,8 +371,8 @@ namespace Application.Infrastructure.Lekser
                 Lexeme = builder.ToString(),
                 Type = TokenType.LITERAL,
                 StringValue = literalBuilder.ToString(),
-                ValueType = "string",
                 Position = _currentPosition,
+                ValueType = TypeName.STRING
             };
             return true;
         }
@@ -469,10 +437,10 @@ namespace Application.Infrastructure.Lekser
             Current = new Token()
             {
                 Type = TokenType.LITERAL,
-                ValueType = "bool",
                 BoolValue = boolValue,
                 Lexeme = lexeme,
                 Position = _currentPosition,
+                ValueType = TypeName.BOOL,
             };
 
             return true;
@@ -506,7 +474,6 @@ namespace Application.Infrastructure.Lekser
                 Lexeme = lexeme,
                 Type = TokenHelpers.KeywordsMap[lexeme],
                 Position = _currentPosition,
-                ValueType = "Type"
             };
 
             return true;
@@ -514,21 +481,17 @@ namespace Application.Infrastructure.Lekser
 
         private bool tryMatchTypeToken(string lexeme)
         {
-            var match = _options.TypesInfo!.Types.Where(x => x.Lexeme!.Equals(lexeme));
-
-            if (!match.Any())
+            if (!_options.TypesInfo!.Types.ContainsKey(lexeme))
             {
                 return false;
             }
 
-            var typeInfo = match.First();
-
             Current = new Token()
             {
-                Lexeme = typeInfo.Lexeme,
                 Type = TokenType.TYPE,
                 Position = _currentPosition,
-                StringValue = typeInfo.Lexeme,
+                Lexeme = lexeme,
+                ValueType = lexeme
             };
 
             return true;

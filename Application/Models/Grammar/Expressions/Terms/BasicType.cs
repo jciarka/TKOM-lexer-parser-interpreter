@@ -1,4 +1,5 @@
 ﻿using Application.Infrastructure.Presenters;
+using Application.Models.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,8 @@ namespace Application.Models.Grammar.Expressions.Terms
 {
     public class BasicType : TypeBase
     {
-        public string Name { get; set; }
-
-        public BasicType(string name)
+        public BasicType(string name, TypeEnum type) : base(name, type)
         {
-            Name = name;
         }
 
         public override void Accept(IPresenterVisitor visitor, int v)

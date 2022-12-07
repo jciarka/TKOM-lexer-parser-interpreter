@@ -15,6 +15,19 @@ namespace Application.Models.Types
         ACCOUNT,
         TYPE,
         COLLECTION,
-        EXTERNAL
+        CURRENCY,
+        GENERIC
+    }
+
+    public static class TypeName
+    {
+        public static string BOOL => "bool";
+        public static string INT => "int";
+        public static string DECIMAL => "decimal";
+        public static string STRING => "string";
+        public static string TYPE => "Type";
+        public static string ACCOUNT => "Account";
+        public static string COLLECTION => "Collection";
+        public static string EXTERNAL => "External";
     }
 }

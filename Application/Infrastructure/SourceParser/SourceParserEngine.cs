@@ -109,35 +109,6 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private TypeBase parseType()
-        {
-            if (!checkType(TokenType.TYPE, TokenType.TYPE))
-            {
-                throw new UnexpectedTokenException(current, TokenType.TYPE);
-            }
-
-            var basicTypeToken = getCurrentAndAdvance();
-
-            if (checkTypeAndAdvance(TokenType.LESS))
-            {
-                if (!checkType(TokenType.TYPE, TokenType.TYPE))
-                {
-                    throw new UnexpectedTokenException(current, TokenType.TYPE);
-                }
-
-                var parametrisingType = parseType();
-
-                if (!checkTypeAndAdvance(TokenType.GREATER))
-                {
-                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.GREATER));
-                }
-
-                return new GenericType(basicTypeToken.Lexeme!, parametrisingType);
-            }
-
-            return new BasicType(basicTypeToken.Lexeme!);
-        }
-
         private IEnumerable<Parameter> parseParameters()
         {
             var parameters = new List<Parameter>();
@@ -895,13 +866,13 @@ namespace Application.Infrastructure.SourceParser
 
             var literal = getCurrentAndAdvance();
 
-            if (checkType(TokenType.TYPE) && _options.TypesInfo!.ExternalTypes.Select(x => x.Lexeme).Contains(current.Lexeme!))
+            if (checkType(TokenType.TYPE) && _options.TypesInfo!.CurrencyTypes.ContainsKey(current.ValueType!))
             {
-                term = new Literal(literal, getCurrentAndAdvance().Lexeme!);
+                term = new Literal(getCurrentAndAdvance().ValueType!, literal);
             }
             else
             {
-                term = new Literal(literal);
+                term = new Literal(parseBasicType(literal), literal);
             }
 
             return true;
@@ -957,6 +928,40 @@ namespace Application.Infrastructure.SourceParser
 
         private Token current => _lexer.Current;
         private bool advance() => _lexer.Advance();
+
+        private TypeBase parseType()
+        {
+            if (!checkType(TokenType.TYPE, TokenType.TYPE))
+            {
+                throw new UnexpectedTokenException(current, TokenType.TYPE);
+            }
+
+            var basicTypeToken = getCurrentAndAdvance();
+
+            if (checkTypeAndAdvance(TokenType.LESS))
+            {
+                if (!checkType(TokenType.TYPE, TokenType.TYPE))
+                {
+                    throw new UnexpectedTokenException(current, TokenType.TYPE);
+                }
+
+                var parametrisingType = parseType();
+
+                if (!checkTypeAndAdvance(TokenType.GREATER))
+                {
+                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.GREATER));
+                }
+
+                return new GenericType(basicTypeToken.ValueType!, parametrisingType);
+            }
+
+            return new BasicType(basicTypeToken.ValueType!, _options.TypesInfo.Types[basicTypeToken.ValueType!]);
+        }
+
+        private BasicType parseBasicType(Token typeToken)
+        {
+            return new BasicType(typeToken.ValueType!, _options.TypesInfo.Types[typeToken.ValueType!]);
+        }
 
         private Token getCurrentAndAdvance()
         {

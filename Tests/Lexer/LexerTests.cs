@@ -79,27 +79,9 @@ namespace Tests.Lexer
         }
 
         [Theory]
-        [InlineData("1PLN", "PLN")]
-        [InlineData("1.99PLN", "PLN")]
-        [InlineData("100.99PLN", "PLN")]
-        [InlineData("9999.99PLN", "PLN")]
-        public void ShouldCurrencyLiteralGiveNumberTokenWithIntType(string number, string currency)
-        {
-            var reader = new StringSourceReader(number);
-            var lexer = new LexerEngine(reader, new LexerOptions { TypesInfo = new TypesInfoProvider(new string[] { "PLN", "USD" }) });
-
-            var bareDecimalString = String.Concat(number.Where(x => !char.IsLetter(x)));
-            var bareDecimal = decimal.Parse(bareDecimalString, new NumberFormatInfo { NumberDecimalSeparator = "." });
-
-            Assert.Equal(TokenType.LITERAL, lexer.Current.Type);
-            Assert.Equal(bareDecimal, lexer.Current.DecimalValue);
-            Assert.Equal(number, lexer.Current.Lexeme);
-            Assert.Equal(currency, lexer.Current.ValueType);
-        }
-
-        [Theory]
         [InlineData("1.120.1")]
         [InlineData("1D1")]
+        [InlineData("1DD")]
         public void ShouldInvlaidNumberIdentifierThrowError(string literal)
         {
             var reader = new StringSourceReader(literal);

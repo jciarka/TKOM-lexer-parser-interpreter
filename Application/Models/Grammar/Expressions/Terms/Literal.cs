@@ -11,47 +11,34 @@ namespace Application.Models.Grammar
 {
     public class Literal : TermBase
     {
-        public string Type { get; }
+        public TypeBase Type { get; set; }
+
         public bool? BoolValue { get; set; }
         public string? StringValue { get; set; }
         public int? IntValue { get; set; }
         public decimal? DecimalValue { get; set; }
         public TypeBase? TypeValue { get; set; }
 
-        public Literal(Token token)
+        public Literal(TypeBase typeBase, Token token)
         {
-            if (token.Type == TokenType.TYPE)
-            {
-                throw new NotImplementedException();
-            }
+            Type = typeBase;
 
             BoolValue = token.BoolValue;
             IntValue = token.IntValue;
             DecimalValue = token.DecimalValue;
-            Type = token.ValueType!;
             StringValue = token.StringValue;
-            TypeValue = null;
         }
 
-        public Literal(Token numericLiteral, string currencyType)
+        public Literal(string currencyType, Token numericLiteral)
         {
+            Type = new BasicType(currencyType, Types.TypeEnum.CURRENCY);
             DecimalValue = numericLiteral.DecimalValue ?? numericLiteral.IntValue;
-            Type = currencyType;
-        }
-
-        public Literal(string type, bool? boolValue = null, string? stringValue = null, int? intValue = null, decimal? decimalValue = null)
-        {
-            BoolValue = boolValue;
-            StringValue = stringValue;
-            IntValue = intValue;
-            DecimalValue = decimalValue;
-            Type = type;
         }
 
         public Literal(TypeBase type)
         {
+            Type = new BasicType(Types.TypeName.TYPE, Types.TypeEnum.TYPE);
             TypeValue = type;
-            Type = "Type";
         }
 
         public override void Accept(IPresenterVisitor visitor, int v)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.Models.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,8 +33,8 @@ namespace Application.Models.Tokens
         public decimal? DecimalValue { get; set; }
 
         /// <summary>
-        /// Type of value representet by token - type lexeme
-        /// </summary>
+        /// Type of value representet by token
+        /// </summary>    
         public string? ValueType { get; set; }
     }
 }
