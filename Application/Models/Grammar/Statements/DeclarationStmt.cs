@@ -10,7 +10,7 @@ namespace Application.Models.Grammar
 {
     public class DeclarationStmt : StatementBase
     {
-        public TypeBase? Type { get; }
+        public TypeBase? Type { get; set; }
         public Identifier Identifier { get; }
         public ExpressionBase? Expression { get; }
 
@@ -24,6 +24,11 @@ namespace Application.Models.Grammar
         public override void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
+        }
+
+        public override TypeBase? Accept(ITypingAnalyseVisitor visitor)
+        {
+            return visitor.Visit(this);
         }
     }
 }

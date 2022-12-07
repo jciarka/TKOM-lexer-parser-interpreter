@@ -16,7 +16,8 @@ namespace Application.Models.Types
         TYPE,
         COLLECTION,
         CURRENCY,
-        GENERIC
+        GENERIC,
+        NONE
     }
 
     public static class TypeName

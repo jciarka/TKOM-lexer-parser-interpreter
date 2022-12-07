@@ -931,7 +931,7 @@ namespace Application.Infrastructure.SourceParser
 
         private TypeBase parseType()
         {
-            if (!checkType(TokenType.TYPE, TokenType.TYPE))
+            if (!checkType(TokenType.TYPE))
             {
                 throw new UnexpectedTokenException(current, TokenType.TYPE);
             }
@@ -940,7 +940,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (checkTypeAndAdvance(TokenType.LESS))
             {
-                if (!checkType(TokenType.TYPE, TokenType.TYPE))
+                if (!checkType(TokenType.TYPE))
                 {
                     throw new UnexpectedTokenException(current, TokenType.TYPE);
                 }

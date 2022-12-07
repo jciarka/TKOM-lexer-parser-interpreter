@@ -17,7 +17,7 @@ namespace Application.Models.Grammar
         public string? StringValue { get; set; }
         public int? IntValue { get; set; }
         public decimal? DecimalValue { get; set; }
-        public TypeBase? TypeValue { get; set; }
+        public TypeBase? ValueType { get; set; }
 
         public Literal(TypeBase typeBase, Token token)
         {
@@ -37,13 +37,18 @@ namespace Application.Models.Grammar
 
         public Literal(TypeBase type)
         {
-            Type = new BasicType(Types.TypeName.TYPE, Types.TypeEnum.TYPE);
-            TypeValue = type;
+            Type = new TypeType(type);
+            ValueType = type;
         }
 
         public override void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
+        }
+
+        public override TypeBase? Accept(ITypingAnalyseVisitor visitor)
+        {
+            return visitor.Visit(this);
         }
     }
 }

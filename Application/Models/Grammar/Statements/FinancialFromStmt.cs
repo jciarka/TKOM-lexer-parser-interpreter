@@ -1,4 +1,5 @@
 ﻿using Application.Infrastructure.Presenters;
+using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Tokens;
 using System.Linq.Expressions;
 
@@ -24,5 +25,9 @@ namespace Application.Models.Grammar
             visitor.Visit(this, v);
         }
 
+        public override TypeBase? Accept(ITypingAnalyseVisitor visitor)
+        {
+            return visitor.Visit(this);
+        }
     }
 }

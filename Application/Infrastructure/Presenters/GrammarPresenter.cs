@@ -340,7 +340,7 @@ namespace Application.Infrastructure.Presenters
             if (node.Type.Type == TypeEnum.TYPE)
             {
                 write(depth + 1, $"LITERAL TYPE");
-                node.TypeValue!.Accept(this, depth + 2);
+                node.ValueType!.Accept(this, depth + 2);
             }
             else
             {
@@ -368,6 +368,11 @@ namespace Application.Infrastructure.Presenters
         {
             write(depth, $"Type of {type.Name} ({type.Type}) parametrised by");
             type.ParametrisingType.Accept(this, depth + 1);
+        }
+
+        public void Visit(TypeType type, int depth)
+        {
+            write(depth, $"Type of {type.Name} ({type.Type}) representing ({type.OfType}) parametrised by");
         }
     }
 }

@@ -16,6 +16,7 @@ namespace Application.Infrastructure.Presenters
         void Visit(BlockStmt blockStmt, int v);
         void Visit(IdentifierAssignmentStatement identifierAssignmentStatement, int v);
         void Visit(PropertyAssignmentStatement propertyAssignmentStatement, int v);
+        void Visit(TypeType typeType, int v);
         void Visit(IndexAssignmentStatement indexAssignmentStatement, int v);
         void Visit(DeclarationStmt declarationStmt, int v);
         void Visit(ReturnStmt returnStmt, int v);
