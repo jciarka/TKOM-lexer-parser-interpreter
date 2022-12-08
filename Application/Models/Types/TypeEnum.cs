@@ -17,7 +17,7 @@ namespace Application.Models.Types
         COLLECTION,
         CURRENCY,
         GENERIC,
-        NONE
+        VOID
     }
 
     public static class TypeName
@@ -30,5 +30,7 @@ namespace Application.Models.Types
         public static string ACCOUNT => "Account";
         public static string COLLECTION => "Collection";
         public static string EXTERNAL => "External";
+        public static string VOID => "void";
+        public static string LAMBDA => "Lambda";
     }
 }

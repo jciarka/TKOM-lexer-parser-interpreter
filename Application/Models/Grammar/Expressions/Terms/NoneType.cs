@@ -8,13 +8,10 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar.Expressions.Terms
 {
-    public class TypeType : TypeBase
+    public class NoneType : TypeBase
     {
-        public TypeBase OfType { get; }
-
-        public TypeType(TypeBase ofType) : base(TypeName.TYPE, TypeEnum.TYPE)
+        public NoneType() : base(TypeName.VOID, TypeEnum.VOID)
         {
-            OfType = ofType;
         }
 
         public override void Accept(IPresenterVisitor visitor, int v)

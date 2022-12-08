@@ -5,12 +5,12 @@ namespace Application.Models.Grammar
 {
     public class FunctionDecl : GrammarRuleBase
     {
-        public TypeBase? Type { get; }
+        public TypeBase Type { get; }
         public string Name { get; }
         public IEnumerable<Parameter> Parameters { get; }
         public BlockStmt Block { get; }
 
-        public FunctionDecl(string name, IEnumerable<Parameter> parameters, BlockStmt block, TypeBase? type = null)
+        public FunctionDecl(TypeBase type, string name, IEnumerable<Parameter> parameters, BlockStmt block)
         {
             Type = type;
             Name = name;

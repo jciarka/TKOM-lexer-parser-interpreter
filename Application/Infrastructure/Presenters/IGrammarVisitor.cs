@@ -50,6 +50,7 @@ namespace Application.Infrastructure.Presenters
 
         void Visit(Literal literal, int v);
 
+        void Visit(NoneType noneType, int v);
         void Visit(BasicType literal, int v);
         void Visit(GenericType literal, int v);
 

@@ -18,7 +18,7 @@ namespace Application.Examples
     {
         public static void Example()
         {
-            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd.txt");
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd2.txt");
 
             using (var reader = new FileSourceReader(path))
             using (var errorReader = new FileSourceRandomReader(path))
@@ -36,6 +36,9 @@ namespace Application.Examples
                     new ConsoleErrorHandler(errorReader));
 
                 var root = parserEngine.Parse();
+
+                var typingAnalyser = new TypingAnalyser(new ConsoleErrorHandler(errorReader));
+                typingAnalyser.Visit(root);
 
                 var presenter = new GrammarPresenter();
 

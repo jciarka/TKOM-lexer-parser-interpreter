@@ -19,7 +19,7 @@ namespace Application.Models.Grammar
             visitor.Visit(this, v);
         }
 
-        public TypeBase? Accept(ITypingAnalyseVisitor visitor)
+        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

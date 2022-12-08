@@ -66,7 +66,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            TypeBase? type = checkTypeAndAdvance(TokenType.VOID) ? null : parseType();
+            TypeBase? type = checkTypeAndAdvance(TokenType.VOID) ? new NoneType() : parseType();
 
             // function name
             if (!checkType(TokenType.IDENTIFIER))
@@ -105,7 +105,8 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
             }
 
-            function = new FunctionDecl(name, parameters, (BlockStmt)block!, type);
+            function = new FunctionDecl(type, name, parameters, (BlockStmt)block!);
+
             return true;
         }
 
@@ -310,11 +311,16 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var expression = parseExpression();
+            if (checkTypeAndAdvance(TokenType.SEMICOLON))
+            {
+                statement = new ReturnStmt();
+            }
+            else
+            {
+                statement = new ReturnStmt(parseExpression());
+                skipSemicolon();
+            }
 
-            skipSemicolon();
-
-            statement = new ReturnStmt(expression);
             return true;
         }
 

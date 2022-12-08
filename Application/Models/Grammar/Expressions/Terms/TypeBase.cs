@@ -20,5 +20,25 @@ namespace Application.Models.Grammar.Expressions.Terms
         }
 
         public abstract void Accept(IPresenterVisitor visitor, int v);
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            if (!obj.GetType().IsSubclassOf(typeof(TypeBase)))
+            {
+                return false;
+            }
+
+            return Name.Equals(((TypeBase)obj).Name);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name);
+        }
     }
 }

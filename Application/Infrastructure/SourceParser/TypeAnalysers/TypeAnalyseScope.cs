@@ -9,18 +9,18 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Interpreter
 {
-    public class TypeAnalyseScope : IScope
+    public class TypeAnalyseScope : ITypeAnalyseScope
     {
-        public TypeAnalyseScope? Previous { get; }
+        public ITypeAnalyseScope? Previous { get; }
         private Dictionary<string, TypeBase> variables;
 
-        public TypeAnalyseScope(TypeAnalyseScope previous)
+        public TypeAnalyseScope(ITypeAnalyseScope previous)
         {
             Previous = previous;
             variables = new Dictionary<string, TypeBase>();
         }
 
-        public TypeAnalyseScope(IEnumerable<Tuple<string, TypeBase>> locals)
+        public TypeAnalyseScope(IEnumerable<Tuple<string, TypeBase>> locals, ITypeAnalyseScope? previous = null)
         {
             variables = new Dictionary<string, TypeBase>();
 
@@ -28,6 +28,8 @@ namespace Application.Infrastructure.Interpreter
             {
                 variables.Add(local.Item1, local.Item2);
             }
+
+            Previous = previous;
         }
 
         public bool TryFind(string name, out TypeBase? type)

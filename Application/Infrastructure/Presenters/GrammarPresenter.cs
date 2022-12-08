@@ -101,7 +101,15 @@ namespace Application.Infrastructure.Presenters
         public void Visit(ReturnStmt node, int depth)
         {
             write(depth, $"RETURN");
-            node.ReturnExpression.Accept(this, depth + 1);
+
+            if (node.ReturnExpression != null)
+            {
+                node.ReturnExpression.Accept(this, depth + 1);
+            }
+            else
+            {
+                write(depth + 1, $"RETURN VOID");
+            }
         }
 
         public void Visit(WhileStmt node, int depth)
@@ -373,6 +381,11 @@ namespace Application.Infrastructure.Presenters
         public void Visit(TypeType type, int depth)
         {
             write(depth, $"Type of {type.Name} ({type.Type}) representing ({type.OfType}) parametrised by");
+        }
+
+        public void Visit(NoneType type, int depth)
+        {
+            write(depth, $"Type of EMPTY");
         }
     }
 }

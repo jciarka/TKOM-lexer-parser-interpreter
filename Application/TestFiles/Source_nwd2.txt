@@ -1,0 +1,37 @@
+﻿# Przykład pliku źródłowego 
+
+void print(string a, int b)
+{
+    return;
+}
+
+int nwd(int a, int b)
+{
+    if(a==b)
+    {
+        return a;
+    }
+    if (a > b)
+    {
+        return nwd(a-b, b); # wywołania rekurencyjne
+    }
+    return nwd(b-a, b);
+}
+
+int factorial(int a)
+{
+    if(a == 1)
+        return 1;
+
+    return a * factorial(a-1);
+}
+
+void main()
+{	
+    int x = 3;
+    int y = 10;
+
+    print("NWD 3 i 10 wynosi = ", nwd(x, y));  # NWD 3 i 10 wynosi = 1
+    print("Silnia 3 wynosi = ", factorial(x));  # Silnia 3 = 6
+
+}

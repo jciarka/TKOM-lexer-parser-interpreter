@@ -10,9 +10,9 @@ namespace Application.Models.Grammar
 {
     public class ReturnStmt : StatementBase
     {
-        public ExpressionBase ReturnExpression { get; }
+        public ExpressionBase? ReturnExpression { get; }
 
-        public ReturnStmt(ExpressionBase returnExpression)
+        public ReturnStmt(ExpressionBase? returnExpression = null)
         {
             ReturnExpression = returnExpression;
         }
@@ -22,7 +22,7 @@ namespace Application.Models.Grammar
             visitor.Visit(this, v);
         }
 
-        public override TypeBase? Accept(ITypingAnalyseVisitor visitor)
+        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

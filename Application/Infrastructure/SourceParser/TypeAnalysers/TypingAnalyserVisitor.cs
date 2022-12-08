@@ -10,19 +10,22 @@ using Application.Models.Types;
 
 namespace Application.Infrastructure.Presenters
 {
-    public class TypingAnalyseVisitor : ITypingAnalyseVisitor
+    public class TypingAnalyser : ITypingAnalyseVisitor
     {
         private readonly IErrorHandler _errorHandler;
 
+        private IEnumerable<FunctionDecl> _allDeclarations = new List<FunctionDecl>();
         private FunctionCallTypeAnalyseContext? _context;
 
-        public TypingAnalyseVisitor(IErrorHandler errorHandler)
+        public TypingAnalyser(IErrorHandler errorHandler)
         {
             _errorHandler = errorHandler;
         }
 
-        public TypeBase? Visit(ProgramRoot node)
+        public TypeBase Visit(ProgramRoot node)
         {
+            _allDeclarations = node.FunctionDeclaration;
+
             foreach (var function in node.FunctionDeclaration)
             {
                 try
@@ -35,19 +38,20 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(FunctionDecl node)
+        public TypeBase Visit(FunctionDecl node)
         {
-            _context = new FunctionCallTypeAnalyseContext(node);
+            _context = new FunctionCallTypeAnalyseContext(node,
+                _allDeclarations.ToDictionary(x => new FunctionSignature(x), x => x.Type));
 
             node.Block.Accept(this);
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(BlockStmt node)
+        public TypeBase Visit(BlockStmt node)
         {
             try
             {
@@ -67,10 +71,10 @@ namespace Application.Infrastructure.Presenters
                 _context!.PopScope();
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(IdentifierAssignmentStatement node)
+        public TypeBase Visit(IdentifierAssignmentStatement node)
         {
             if (!_context!.Scope.TryFind(node.Identifier.Name, out var variableType))
             {
@@ -84,20 +88,20 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, variableType!.Type));
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(PropertyAssignmentStatement propertyAssignmentStatement)
+        public TypeBase Visit(PropertyAssignmentStatement propertyAssignmentStatement)
         {
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(IndexAssignmentStatement indexAssignmentStatement)
+        public TypeBase Visit(IndexAssignmentStatement indexAssignmentStatement)
         {
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(DeclarationStmt node)
+        public TypeBase Visit(DeclarationStmt node)
         {
             var expressionType = node.Expression != null ? node.Expression.Accept(this) : null;
 
@@ -109,7 +113,7 @@ namespace Application.Infrastructure.Presenters
             {
                 node.Type = expressionType;
             }
-            else if (node.Type != expressionType)
+            else if (!node.Type.Equals(expressionType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Type.Type));
             }
@@ -119,29 +123,29 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler.HandleError(new VariableRedefiniitionException(node.Identifier.Name));
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(ReturnStmt node)
+        public TypeBase Visit(ReturnStmt node)
         {
-            var returnExpressionType = node.ReturnExpression != null ? node.ReturnExpression.Accept(this) : null;
+            var returnExpressionType = node.ReturnExpression != null ? node.ReturnExpression.Accept(this) : new NoneType();
 
-            if (returnExpressionType != _context!.ReturnType)
+            if (!_context!.CheckReturnType(returnExpressionType))
             {
-                if (_context.ReturnType != null)
+                if (_context.ReturnType == new NoneType())
                 {
                     _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, _context!.ReturnType.Type));
                 }
                 else
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, TypeEnum.NONE));
+                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, TypeEnum.VOID));
                 }
             }
 
             return returnExpressionType;
         }
 
-        public TypeBase? Visit(WhileStmt node)
+        public TypeBase Visit(WhileStmt node)
         {
             var conditionType = node.Condition.Accept(this);
 
@@ -152,10 +156,10 @@ namespace Application.Infrastructure.Presenters
 
             node.Statement.Accept(this);
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(IfStmt node)
+        public TypeBase Visit(IfStmt node)
         {
             var conditionType = node.Condition.Accept(this);
 
@@ -171,10 +175,10 @@ namespace Application.Infrastructure.Presenters
                 node.ElseStatement.Accept(this);
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(ForeachStmt node)
+        public TypeBase Visit(ForeachStmt node)
         {
             var collectionType = node.CollectionExpression.Accept(this);
 
@@ -192,10 +196,10 @@ namespace Application.Infrastructure.Presenters
 
             node.Statement.Accept(this);
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(FinancialToStmt node)
+        public TypeBase Visit(FinancialToStmt node)
         {
             var accountExpression = node.AccountExpression.Accept(this);
 
@@ -211,10 +215,10 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(FinancialFromStmt node)
+        public TypeBase Visit(FinancialFromStmt node)
         {
             var accountExpression = node.AccountFromExpression.Accept(this);
 
@@ -240,46 +244,98 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(Parameter parameter)
+        public TypeBase Visit(Parameter parameter)
         {
             return parameter.Type;
         }
 
-        public TypeBase? Visit(Lambda lambda)
+        public TypeBase Visit(Lambda lambda)
         {
-            // TO DO:
-            throw new NotImplementedException();
+            if (lambda.Stmt.GetType() == typeof(ExpressionStmt))
+            {
+                return visitExpressionLambda(lambda);
+            }
+            else
+            {
+                return visitBlockLambda(lambda);
+            }
         }
 
-        public TypeBase? Visit(Identifier identifier)
+        private TypeBase visitBlockLambda(Lambda lambda)
+        {
+            var oldContext = _context;
+            TypeBase type = new NoneType();
+
+            try
+            {
+                _context = new FunctionCallTypeAnalyseContext(lambda, _context!.Scope,
+                    _allDeclarations.ToDictionary(x => new FunctionSignature(x), x => x.Type));
+
+                type = _context.ReturnType;
+            }
+            catch (ComputingException issue)
+            {
+                _errorHandler?.HandleError(issue);
+            }
+            finally
+            {
+                _context = oldContext;
+            }
+
+            return new GenericType(TypeName.LAMBDA, type);
+        }
+
+        private TypeBase visitExpressionLambda(Lambda lambda)
+        {
+            TypeBase type = new NoneType();
+
+            try
+            {
+                _context!.PushScope();
+                _context.Scope.TryAdd(lambda.Parameter.Identifier, lambda.Parameter.Type);
+                type = lambda.Stmt.Accept(this);
+            }
+            catch (ComputingException issue)
+            {
+                _errorHandler?.HandleError(issue);
+            }
+            finally
+            {
+                _context!.PopScope();
+            }
+
+            return new GenericType(TypeName.LAMBDA, type);
+        }
+
+        public TypeBase Visit(Identifier identifier)
         {
             if (!_context!.Scope.TryFind(identifier.Name, out var variableType))
             {
                 throw new NotDefinedVariableException(identifier.Name);
             }
 
-            return variableType;
+            return variableType!;
         }
 
-        public TypeBase? Visit(ExpressionArgument expressionArgument)
+        public TypeBase Visit(ExpressionArgument expressionArgument)
         {
-            return expressionArgument.Accept(this);
+            return expressionArgument.Expression.Accept(this);
         }
 
-        public TypeBase? Visit(ExpressionStmt expressionStmt)
+        public TypeBase Visit(ExpressionStmt expressionStmt)
         {
-            return expressionStmt.Accept(this);
+            return expressionStmt.RightExpression.Accept(this);
         }
 
-        public TypeBase? Visit(OrExpr node)
+        public TypeBase Visit(OrExpr node)
         {
             return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
         }
 
-        public TypeBase? Visit(AdditiveExpr node)
+        public TypeBase Visit(AdditiveExpr node)
         {
             var first = node.FirstOperand.Accept(this);
 
@@ -301,7 +357,7 @@ namespace Application.Infrastructure.Presenters
             return first;
         }
 
-        public TypeBase? Visit(MultiplicativeExpr node)
+        public TypeBase Visit(MultiplicativeExpr node)
         {
             var first = node.FirstOperand.Accept(this);
 
@@ -323,7 +379,7 @@ namespace Application.Infrastructure.Presenters
             return first;
         }
 
-        public TypeBase? Visit(NegativeExpr node)
+        public TypeBase Visit(NegativeExpr node)
         {
             var first = node.Operand.Accept(this);
 
@@ -350,10 +406,10 @@ namespace Application.Infrastructure.Presenters
                 return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
             }
 
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(ConversionExpr node)
+        public TypeBase Visit(ConversionExpr node)
         {
             var first = node.OryginalExpression.Accept(this);
 
@@ -372,17 +428,25 @@ namespace Application.Infrastructure.Presenters
             return ((TypeType)next!).OfType;
         }
 
-        public TypeBase? Visit(AndExpr andExpr)
+        public TypeBase Visit(AndExpr andExpr)
         {
             return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
         }
 
-        public TypeBase? Visit(FunctionCallExpr functionCallExpr)
+        public TypeBase Visit(FunctionCallExpr node)
         {
-            throw new NotImplementedException();
+            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
+            var signature = new FunctionSignature(node.Name, parameterTypes);
+
+            if (!_context!.Functions.TryGetValue(signature, out var returnType))
+            {
+                _errorHandler?.HandleError(new FunctionNotDeclaredException(signature));
+            }
+
+            return returnType!;
         }
 
-        public TypeBase? Visit(ComparativeExpr node)
+        public TypeBase Visit(ComparativeExpr node)
         {
             var first = node.FirstOperand.Accept(this);
 
@@ -404,7 +468,7 @@ namespace Application.Infrastructure.Presenters
             return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
         }
 
-        public TypeBase? Visit(PrctOfExpr node)
+        public TypeBase Visit(PrctOfExpr node)
         {
             var accountExpression = node.FirstOperand.Accept(this);
 
@@ -423,59 +487,59 @@ namespace Application.Infrastructure.Presenters
             return new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL);
         }
 
-        public TypeBase? Visit(ConstructiorCallExpr node)
+        public TypeBase Visit(ConstructiorCallExpr node)
         {
             // TO DO check constructors parameters 
             return node.Type;
         }
 
-        public TypeBase? Visit(ObjectPropertyExpr objectPropertyExpr)
+        public TypeBase Visit(ObjectPropertyExpr objectPropertyExpr)
         {
             // TO DO: check parameter types
             // TO DO: return method return type
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(ObjectIndexExpr objectIndexExpr)
+        public TypeBase Visit(ObjectIndexExpr objectIndexExpr)
         {
             // TO DO: check parameter types
             // TO DO: return method return type
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(ObjectMethodExpr node)
+        public TypeBase Visit(ObjectMethodExpr node)
         {
             // TO DO: check parameter types
             // TO DO: return method return type
-            return null;
+            return new NoneType();
         }
 
-        public TypeBase? Visit(BracedExprTerm node)
+        public TypeBase Visit(BracedExprTerm node)
         {
             return node.Expression.Accept(this);
         }
 
-        public TypeBase? Visit(Literal node)
+        public TypeBase Visit(Literal node)
         {
             return node.Type;
         }
 
-        public TypeBase? Visit(BasicType node)
+        public TypeBase Visit(BasicType node)
         {
             return new TypeType(node);
         }
 
-        public TypeBase? Visit(GenericType node)
+        public TypeBase Visit(GenericType node)
         {
             return new TypeType(node);
         }
 
-        public TypeBase? Visit(TypeType node)
+        public TypeBase Visit(TypeType node)
         {
             return node;
         }
 
-        public bool checkType(TypeBase? type, params TypeEnum[] types)
+        public bool checkType(TypeBase type, params TypeEnum[] types)
         {
             if (type == null)
             {
