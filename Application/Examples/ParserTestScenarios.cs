@@ -16,7 +16,34 @@ namespace Application.Examples
 {
     public static class ParserTestScenarios
     {
-        public static void Example()
+        public static void Example1()
+        {
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd.txt");
+
+            using (var reader = new FileSourceReader(path))
+            using (var errorReader = new FileSourceRandomReader(path))
+            {
+                var lexer = new LexerEngine(
+                    reader,
+                    new LexerOptions
+                    {
+                        TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                    });
+
+                var parserEngine = new SourceParserEngine(
+                    new SkipCommentsFilter(lexer),
+                    new ParserOptions { TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" }) },
+                    new ConsoleErrorHandler(errorReader));
+
+                var root = parserEngine.Parse();
+
+                var presenter = new GrammarPresenter();
+
+                root.Accept(presenter, 0);
+            }
+        }
+
+        public static void Example2()
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd2.txt");
 

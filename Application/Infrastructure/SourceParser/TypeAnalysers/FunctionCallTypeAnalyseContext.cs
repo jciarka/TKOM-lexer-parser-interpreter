@@ -14,25 +14,34 @@ namespace Application.Infrastructure.Interpreter
         public FunctionType FunctionType { get; }
         public TypeBase ReturnType { get; private set; }
         public IEnumerable<Tuple<string, TypeBase>> Locals { get; }
-        public ITypeAnalyseScope Scope { get; private set; }
-        public Dictionary<FunctionSignature, TypeBase> Functions { get; }
 
-        public FunctionCallTypeAnalyseContext(FunctionDecl declaration, Dictionary<FunctionSignature, TypeBase>? FunctionsSignatures = null)
+        public ITypeAnalyseScope Scope { get; private set; }
+        public ICallableAnalyseSet CallableSet { get; }
+        public IClassAnalyseSet ClassSet { get; }
+
+        public FunctionCallTypeAnalyseContext(
+            FunctionDecl declaration,
+            ICallableAnalyseSet? signaturesSet = null,
+            IClassAnalyseSet? classAnalyseSet = null)
         {
             FunctionType = FunctionType.BASIC;
             ReturnType = declaration.Type;
             Locals = declaration.Parameters.Select(x => new Tuple<string, TypeBase>(x.Identifier, x.Type));
             Scope = new TypeAnalyseScope(Locals);
-            Functions = FunctionsSignatures ?? new();
+            CallableSet = signaturesSet ?? new CallableAnalyseSet(new());
+            ClassSet = classAnalyseSet ?? new ClassAnalyseSet(new());
         }
 
-        public FunctionCallTypeAnalyseContext(Lambda lambda, ITypeAnalyseScope scope, Dictionary<FunctionSignature, TypeBase>? FunctionsSignatures = null)
+        public FunctionCallTypeAnalyseContext(
+            Lambda lambda,
+            FunctionCallTypeAnalyseContext parentContext)
         {
             FunctionType = FunctionType.LAMBDA;
             ReturnType = new NoneType();
             Locals = new Tuple<string, TypeBase>[] { new Tuple<string, TypeBase>(lambda.Parameter.Identifier, lambda.Parameter.Type) };
-            Scope = new TypeAnalyseScope(Locals, scope);
-            Functions = FunctionsSignatures ?? new();
+            Scope = new TypeAnalyseScope(Locals, parentContext.Scope);
+            CallableSet = parentContext.CallableSet;
+            ClassSet = parentContext.ClassSet;
         }
 
         public void PushScope()

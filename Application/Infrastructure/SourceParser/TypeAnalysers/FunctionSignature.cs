@@ -4,21 +4,25 @@ using System.Text;
 
 namespace Application.Infrastructure.Interpreter
 {
-    public class FunctionSignature
+    public abstract class FunctionSignature
     {
+        public TypeBase ReturnType { get; }
         public string Identifier { get; }
         public IEnumerable<TypeBase> Parameters { get; }
 
         public FunctionSignature(
+            TypeBase returnType,
             string identifier,
             IEnumerable<TypeBase> parameters)
         {
+            ReturnType = returnType;
             Identifier = identifier;
             Parameters = parameters;
         }
 
         public FunctionSignature(FunctionDecl declaration)
         {
+            ReturnType = declaration.Type;
             Identifier = declaration.Name;
             Parameters = declaration.Parameters.Select(x => x.Type);
         }
@@ -50,7 +54,23 @@ namespace Application.Infrastructure.Interpreter
             return getSignature();
         }
 
-        private string getSignature()
+        protected abstract string getSignature();
+
+    }
+
+
+    class FixedArgumentsFunctionSignature : FunctionSignature
+    {
+        public FixedArgumentsFunctionSignature(FunctionDecl declaration) : base(declaration)
+        {
+        }
+
+        public FixedArgumentsFunctionSignature(TypeBase returnType, string identifier, IEnumerable<TypeBase> parameters)
+            : base(returnType, identifier, parameters)
+        {
+        }
+
+        protected override string getSignature()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -60,6 +80,19 @@ namespace Application.Infrastructure.Interpreter
             sb.Append(")");
 
             return sb.ToString();
+        }
+    }
+
+    class VariableArgumentsFunctionSignature : FunctionSignature
+    {
+        public VariableArgumentsFunctionSignature(TypeBase returnType, string identifier)
+               : base(returnType, identifier, new List<TypeBase>())
+        {
+        }
+
+        protected override string getSignature()
+        {
+            return $"{Identifier}(<any>)";
         }
     }
 }

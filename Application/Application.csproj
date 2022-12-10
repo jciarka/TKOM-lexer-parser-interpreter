@@ -8,11 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\Interpreter\" />
-    <Folder Include="Infrastructure\Interpreter\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="TestFiles\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

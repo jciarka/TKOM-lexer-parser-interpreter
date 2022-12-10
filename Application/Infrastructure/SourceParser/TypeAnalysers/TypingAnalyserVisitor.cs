@@ -6,20 +6,22 @@ using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Tokens;
 using Application.Models.Types;
-
+using System.Linq;
 
 namespace Application.Infrastructure.Presenters
 {
     public class TypingAnalyser : ITypingAnalyseVisitor
     {
         private readonly IErrorHandler _errorHandler;
+        private readonly TypingAnalyserOptions _options;
 
         private IEnumerable<FunctionDecl> _allDeclarations = new List<FunctionDecl>();
         private FunctionCallTypeAnalyseContext? _context;
 
-        public TypingAnalyser(IErrorHandler errorHandler)
+        public TypingAnalyser(IErrorHandler errorHandler, TypingAnalyserOptions? options = null)
         {
             _errorHandler = errorHandler;
+            _options = options ?? new TypingAnalyserOptions();
         }
 
         public TypeBase Visit(ProgramRoot node)
@@ -43,8 +45,17 @@ namespace Application.Infrastructure.Presenters
 
         public TypeBase Visit(FunctionDecl node)
         {
-            _context = new FunctionCallTypeAnalyseContext(node,
-                _allDeclarations.ToDictionary(x => new FunctionSignature(x), x => x.Type));
+            var parsedFunctions = _allDeclarations
+                .ToDictionary(x => (FunctionSignature)new FixedArgumentsFunctionSignature(x), x => x.Type);
+
+            var nativeFunctions = _options.NativeCallables
+                .ToDictionary(x => x.Signature, x => x.Signature.ReturnType);
+
+            var functions = nativeFunctions
+                .Union(parsedFunctions)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            _context = new FunctionCallTypeAnalyseContext(node, new CallableAnalyseSet(functions));
 
             node.Block.Accept(this);
 
@@ -271,9 +282,7 @@ namespace Application.Infrastructure.Presenters
 
             try
             {
-                _context = new FunctionCallTypeAnalyseContext(lambda, _context!.Scope,
-                    _allDeclarations.ToDictionary(x => new FunctionSignature(x), x => x.Type));
-
+                _context = new FunctionCallTypeAnalyseContext(lambda, oldContext!);
                 type = _context.ReturnType;
             }
             catch (ComputingException issue)
@@ -436,11 +445,11 @@ namespace Application.Infrastructure.Presenters
         public TypeBase Visit(FunctionCallExpr node)
         {
             var parameterTypes = node.Arguments.Select(x => x.Accept(this));
-            var signature = new FunctionSignature(node.Name, parameterTypes);
+            var callDescription = new FunctionCallExprDescription(node.Name, parameterTypes);
 
-            if (!_context!.Functions.TryGetValue(signature, out var returnType))
+            if (!_context!.CallableSet.TryFind(callDescription, out var returnType))
             {
-                _errorHandler?.HandleError(new FunctionNotDeclaredException(signature));
+                _errorHandler?.HandleError(new FunctionNotDeclaredException(callDescription));
             }
 
             return returnType!;
@@ -489,29 +498,52 @@ namespace Application.Infrastructure.Presenters
 
         public TypeBase Visit(ConstructiorCallExpr node)
         {
-            // TO DO check constructors parameters 
+            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
+
+            if (!_context!.ClassSet.TryFindConstructor(node.Type, parameterTypes))
+            {
+                _errorHandler?.HandleError(new ClassNotDeclaredException(node.Type.Name));
+            }
+
             return node.Type;
         }
 
-        public TypeBase Visit(ObjectPropertyExpr objectPropertyExpr)
+        public TypeBase Visit(ObjectPropertyExpr node)
         {
-            // TO DO: check parameter types
-            // TO DO: return method return type
-            return new NoneType();
+            var objectType = node.Object.Accept(this);
+
+            if (!_context!.ClassSet.TryFindProperty(objectType, node.Property, out var propertyType))
+            {
+                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+            }
+
+            return propertyType!;
         }
 
-        public TypeBase Visit(ObjectIndexExpr objectIndexExpr)
+        public TypeBase Visit(ObjectIndexExpr node)
         {
-            // TO DO: check parameter types
-            // TO DO: return method return type
-            return new NoneType();
+            var objectType = node.Object.Accept(this);
+
+            if (!objectType.Name.Equals(TypeName.COLLECTION))
+            {
+                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+            }
+
+            return (objectType as GenericType)!.ParametrisingType;
         }
 
         public TypeBase Visit(ObjectMethodExpr node)
         {
-            // TO DO: check parameter types
-            // TO DO: return method return type
-            return new NoneType();
+            var objectType = node.Object.Accept(this);
+            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
+
+            if (!_context!.ClassSet.TryFindMethod(
+                objectType, new FunctionCallExprDescription(node.Method, parameterTypes), out var returnType))
+            {
+                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+            }
+
+            return returnType!;
         }
 
         public TypeBase Visit(BracedExprTerm node)
