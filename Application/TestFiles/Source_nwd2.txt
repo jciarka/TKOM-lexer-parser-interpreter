@@ -34,10 +34,54 @@ void main()
     print("NWD 3 i 10 wynosi = ", nwd(x, y));  # NWD 3 i 10 wynosi = 1
     print("Silnia 3 wynosi = ", factorial(x));  # Silnia 3 = 6
 
-    var a = Account(PLN, 100000);
+    var a = Account<PLN>(100000);
 
     # Zmniejszenie stanu konta o wartość
-    # a >> 100 CHF;
-    # a >> 100 to CHF;
+    a >> 100 CHF;
+    a >> 100 to CHF;
     a >> a.Ballance to a.Currency;
+
+    # Zmniejszenie stanu konta o procent
+    a %> 0.1;
+
+    # Zwiększenie stanu konta o wartość
+    a << 100 PLN;
+    a << 100 to PLN;
+
+    # Zwiększenie stanu konta o procent
+    a <% 0.1;
+
+    var b = Account<USD>();
+
+    # Przelew między kontami na wartość
+    a >> 100 CHF >> b;
+    a >> 100 to CHF >> b;
+
+    # Przelew między kontami na procent pierwszego z kont
+    a %> 0.1 >> b;
+
+    # Obliczenie procentowej wartości z konta
+    var prctAmount = a % 0.1;
+
+    print(a.Currency); # PLN
+    print(a.Ballance); # 1000000 PLN
+
+    var accounts = Collection< Account<PLN> >();
+
+    # Dodawanie
+    accounts.Add(Account<PLN>(120));
+    accounts.Add(Account<PLN>(10));
+
+    var account = accounts[0];
+    PLN ballance = accounts[1].Ballance to accounts[1].Currency;
+
+    accounts.Delete(1);
+
+    Account<PLN> first = accounts.First(lambda Account<PLN> x => x.Ballance > 10000 to decimal);
+    Account<PLN> last = accounts.Last(lambda Account<PLN> x => x.Ballance > 10000 to decimal);
+    Collection< Account<PLN> > bigAccounts = accounts.Where(lambda Account<PLN> x => x.Ballance > 10000 to decimal);
+
+    Collection<Account> bigAccounts2 = accounts.Where(lambda Account x => {
+        return x.currecy == USD;
+    });
 }

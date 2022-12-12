@@ -36,8 +36,8 @@ namespace Application.Models.Values.NativeLibrary
                     {
                         new FixedArgumentsFunctionSignature(
                             new GenericType(TypeName.COLLECTION, ParametrisingType),
-                            TypeName.ACCOUNT,
-                            new List<TypeBase>() { new TypeType(null!) }),
+                            TypeName.COLLECTION,
+                            new List<TypeBase>() { }),
 
                         new CollectionClassConstructor(ParametrisingType)
                     }
@@ -68,14 +68,14 @@ namespace Application.Models.Values.NativeLibrary
                         new FixedArgumentsFunctionSignature(
                             ParametrisingType,
                             "First",
-                            new List<TypeBase>()),
+                            new List<TypeBase>() { new GenericType(TypeName.LAMBDA, ParametrisingType) }),
                         new(ParametrisingType, new CollectionClassFirstMethod())
                     },
                     {
                         new FixedArgumentsFunctionSignature(
                             ParametrisingType,
                             "Last",
-                            new List<TypeBase>()),
+                            new List<TypeBase>() { new GenericType(TypeName.LAMBDA, ParametrisingType) }),
                         new(ParametrisingType, new CollectionClassLastMethod())
                     },
                     { new FixedArgumentsFunctionSignature(

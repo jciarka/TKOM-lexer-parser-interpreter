@@ -34,23 +34,23 @@ namespace Application.Models.Values.NativeLibrary
                 {
                     {
                         new FixedArgumentsFunctionSignature(
-                            new BasicType(TypeName.ACCOUNT, TypeEnum.ACCOUNT),
+                            new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
-                            new List<TypeBase>() { new TypeType(null!) }),
+                            new List<TypeBase>() { }),
                         new AccountClassTypeConstructor()
                     },
                     {
                         new FixedArgumentsFunctionSignature(
-                            new BasicType(TypeName.ACCOUNT, TypeEnum.ACCOUNT),
+                            new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
-                            new List<TypeBase>() { new TypeType(null!), new BasicType(TypeName.INT, TypeEnum.INT) }),
+                            new List<TypeBase>() { new BasicType(TypeName.INT, TypeEnum.INT) }),
                         new AccountClassTypeAndIntValueConstructor()
                     },
                     {
                         new FixedArgumentsFunctionSignature(
-                            new BasicType(TypeName.ACCOUNT, TypeEnum.ACCOUNT),
+                            new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
-                            new List<TypeBase>() { new TypeType(null!), new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL) }),
+                            new List<TypeBase>() { new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL) }),
                         new AccountClassTypeConstructor()
                     }
                 });
@@ -68,8 +68,8 @@ namespace Application.Models.Values.NativeLibrary
                 new Dictionary<FunctionSignature, Tuple<TypeBase, IMethod>>()
                 {
                     {
-                        new FixedArgumentsFunctionSignature(new BasicType(TypeName.ACCOUNT, TypeEnum.ACCOUNT), "Copy", new List<TypeBase>()),
-                        new(new BasicType(TypeName.ACCOUNT, TypeEnum.ACCOUNT), new AccountCopyMethod())
+                        new FixedArgumentsFunctionSignature(new GenericType(TypeName.ACCOUNT, _currency), "Copy", new List<TypeBase>()),
+                        new(new GenericType(TypeName.ACCOUNT, _currency), new AccountCopyMethod())
                     }
                 });
     }

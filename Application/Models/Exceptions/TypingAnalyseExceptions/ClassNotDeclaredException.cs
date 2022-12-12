@@ -13,4 +13,17 @@ namespace Application.Models.Exceptions.SourseParser
             return $"Class or constructor does not exist {className}";
         }
     }
+
+    internal class PropertyNotDeclaredException : ComputingException
+    {
+        public PropertyNotDeclaredException(string className, string propertyName)
+            : base(new CharacterPosition(), prepareMessage(className, propertyName))
+        {
+        }
+
+        private static string prepareMessage(string className, string propertyName)
+        {
+            return $"Property {propertyName} does not exists at class {className}";
+        }
+    }
 }

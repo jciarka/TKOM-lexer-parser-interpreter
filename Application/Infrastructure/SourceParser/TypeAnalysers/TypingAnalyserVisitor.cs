@@ -199,7 +199,7 @@ namespace Application.Infrastructure.Presenters
 
             if (collectionType!.GetType() != typeof(GenericType))
             {
-                _errorHandler.HandleError(new InvalidTypeException(collectionType, TypeEnum.GENERIC));
+                _errorHandler.HandleError(new InvalidTypeException(collectionType, TypeEnum.ACCOUNT));
             }
 
             var genericCollectionType = (GenericType)collectionType;
@@ -218,16 +218,26 @@ namespace Application.Infrastructure.Presenters
         {
             var accountExpression = node.AccountExpression.Accept(this);
 
-            if (!checkType(accountExpression, TypeEnum.ACCOUNT))
+            if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
                 _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.ACCOUNT));
             }
 
             var valueExpression = node.ValueExpression.Accept(this);
 
-            if (!checkType(valueExpression, TypeEnum.CURRENCY))
+            if (node.Operator == TokenType.TRANSFER_TO)
             {
-                _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                if (!checkType(valueExpression, TypeEnum.CURRENCY))
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                }
+            }
+            else
+            {
+                if (!checkType(valueExpression, TypeEnum.INT, TypeEnum.DECIMAL))
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                }
             }
 
             return new NoneType();
@@ -237,23 +247,33 @@ namespace Application.Infrastructure.Presenters
         {
             var accountExpression = node.AccountFromExpression.Accept(this);
 
-            if (!checkType(accountExpression, TypeEnum.ACCOUNT))
+            if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
                 _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.ACCOUNT));
             }
 
             var valueExpression = node.ValueExpression.Accept(this);
 
-            if (!checkType(valueExpression, TypeEnum.CURRENCY))
+            if (node.Operator == TokenType.TRANSFER_FROM)
             {
-                _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                if (!checkType(valueExpression, TypeEnum.CURRENCY))
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                }
+            }
+            else
+            {
+                if (!checkType(valueExpression, TypeEnum.INT, TypeEnum.DECIMAL))
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                }
             }
 
             if (node.AccountToExpression != null)
             {
                 var accountToExpression = node.AccountToExpression.Accept(this);
 
-                if (!checkType(accountToExpression, TypeEnum.ACCOUNT))
+                if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
                 {
                     _errorHandler.HandleError(new InvalidTypeException(accountToExpression, TypeEnum.ACCOUNT));
                 }
@@ -478,9 +498,9 @@ namespace Application.Infrastructure.Presenters
         {
             var accountExpression = node.FirstOperand.Accept(this);
 
-            if (!checkType(accountExpression, TypeEnum.ACCOUNT))
+            if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
-                _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.GENERIC));
             }
 
             var prctExpression = node.SecondOperand.Accept(this);
@@ -511,7 +531,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!_context!.ClassSet.TryFindProperty(objectType, node.Property, out var propertyType))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+                _errorHandler?.HandleError(new PropertyNotDeclaredException(objectType.Name, node.Property));
             }
 
             return propertyType!;

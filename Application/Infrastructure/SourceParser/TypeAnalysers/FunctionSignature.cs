@@ -76,7 +76,7 @@ namespace Application.Infrastructure.Interpreter
 
             sb.Append(Identifier);
             sb.Append("(");
-            sb.Append(string.Join(",", Parameters.Select(x => x.Name)));
+            sb.Append(string.Join(",", Parameters.Select(x => x?.Name ?? "<UNKNOWN>")));
             sb.Append(")");
 
             return sb.ToString();
