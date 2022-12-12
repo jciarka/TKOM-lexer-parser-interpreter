@@ -11,14 +11,32 @@ namespace Application.Models.Values.NativeLibrary
     {
         public static IEnumerable<INativeClassPrototype> GetClassPrototypes()
         {
-            var proptotypes = new List<INativeClassPrototype>();
 
-            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
-            {
-                if (type is INativeClassPrototype)
+            var proptotypes = new List<INativeClassPrototype>();
+            /*
+                foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
                 {
-                    proptotypes.Add((INativeClassPrototype)Activator.CreateInstance(type)!);
+                    if (type is INativeClassPrototype)
+                    {
+                        proptotypes.Add((INativeClassPrototype)Activator.CreateInstance(type)!);
+                    }
                 }
+            */
+
+            /*            var type = typeof(INativeClassPrototype);
+
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => type.IsAssignableFrom(p) && type.IsClass)
+                .Select(x => (INativeClassPrototype)Activator.CreateInstance(x)!)
+                .ToList();
+            */
+
+
+            foreach (Type mytype in Assembly.GetExecutingAssembly().GetTypes()
+                .Where(mytype => mytype.GetInterfaces().Contains(typeof(INativeClassPrototype))))
+            {
+                proptotypes.Add((INativeClassPrototype)Activator.CreateInstance(mytype)!);
             }
 
             return proptotypes;
@@ -28,12 +46,10 @@ namespace Application.Models.Values.NativeLibrary
         {
             var functions = new List<INativeCallable>();
 
-            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+            foreach (Type mytype in Assembly.GetExecutingAssembly().GetTypes()
+                .Where(mytype => mytype.GetInterfaces().Contains(typeof(INativeCallable))))
             {
-                if (type is INativeCallable)
-                {
-                    functions.Add((INativeCallable)Activator.CreateInstance(type)!);
-                }
+                functions.Add((INativeCallable)Activator.CreateInstance(mytype)!);
             }
 
             return functions;

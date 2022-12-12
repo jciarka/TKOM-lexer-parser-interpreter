@@ -14,13 +14,19 @@ namespace Application.Models.Values.NativeLibrary
     {
         public IClass Create(TypeBase? parametrisingType = null)
         {
-            return new AccountClass();
+            return new AccountClass(parametrisingType!);
         }
     }
 
     public class AccountClass : INativeClass
     {
         public string Name => TypeName.ACCOUNT;
+        public TypeBase _currency;
+
+        public AccountClass(TypeBase currency)
+        {
+            _currency = currency;
+        }
 
         public ReadOnlyDictionary<FunctionSignature, IConstructor> Constructors =>
             new ReadOnlyDictionary<FunctionSignature, IConstructor>(
@@ -53,7 +59,7 @@ namespace Application.Models.Values.NativeLibrary
             new ReadOnlyDictionary<string, TypeBase>(
                 new Dictionary<string, TypeBase>()
                 {
-                    { "Currency", new TypeType(null!) },
+                    { "Currency", new TypeType(_currency) },
                     { "Ballance", new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL) },
                 });
 

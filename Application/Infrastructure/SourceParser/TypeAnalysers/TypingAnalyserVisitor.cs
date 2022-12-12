@@ -6,6 +6,7 @@ using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Tokens;
 using Application.Models.Types;
+using Application.Models.Values;
 using System.Linq;
 
 namespace Application.Infrastructure.Presenters
@@ -55,7 +56,10 @@ namespace Application.Infrastructure.Presenters
                 .Union(parsedFunctions)
                 .ToDictionary(x => x.Key, x => x.Value);
 
-            _context = new FunctionCallTypeAnalyseContext(node, new CallableAnalyseSet(functions));
+            var prototypes = _options.NativeClasses
+                .ToDictionary(x => x.Create().Name, x => (IClassPrototype)x);
+
+            _context = new FunctionCallTypeAnalyseContext(node, new CallableAnalyseSet(functions), new ClassAnalyseSet(prototypes));
 
             node.Block.Accept(this);
 
@@ -420,13 +424,6 @@ namespace Application.Infrastructure.Presenters
 
         public TypeBase Visit(ConversionExpr node)
         {
-            var first = node.OryginalExpression.Accept(this);
-
-            if (!checkType(first, TypeEnum.ACCOUNT))
-            {
-                _errorHandler.HandleError(new InvalidTypeException(null, TypeEnum.ACCOUNT));
-            }
-
             var next = node.TypeExpression.Accept(this);
 
             if (!checkType(next, TypeEnum.TYPE))

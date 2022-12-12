@@ -34,4 +34,10 @@ void main()
     print("NWD 3 i 10 wynosi = ", nwd(x, y));  # NWD 3 i 10 wynosi = 1
     print("Silnia 3 wynosi = ", factorial(x));  # Silnia 3 = 6
 
+    var a = Account(PLN, 100000);
+
+    # Zmniejszenie stanu konta o wartość
+    # a >> 100 CHF;
+    # a >> 100 to CHF;
+    a >> a.Ballance to a.Currency;
 }

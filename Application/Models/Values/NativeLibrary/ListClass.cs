@@ -20,7 +20,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClass : INativeGenericClass
     {
-        public string Name => TypeName.ACCOUNT;
+        public string Name => TypeName.COLLECTION;
 
         public TypeBase ParametrisingType { get; }
 

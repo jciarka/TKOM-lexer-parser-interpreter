@@ -17,7 +17,7 @@ namespace Application.Infrastructure.Interpreter
         {
             ReturnType = returnType;
             Identifier = identifier;
-            Parameters = parameters;
+            Parameters = parameters ?? new List<TypeBase>();
         }
 
         public FunctionSignature(FunctionDecl declaration)
@@ -34,7 +34,7 @@ namespace Application.Infrastructure.Interpreter
                 return false;
             }
 
-            if (!obj.GetType().Equals(typeof(FunctionSignature)))
+            if (!obj.GetType().IsSubclassOf(typeof(FunctionSignature)))
             {
                 return false;
             }
