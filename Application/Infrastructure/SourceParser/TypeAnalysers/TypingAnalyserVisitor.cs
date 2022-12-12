@@ -100,7 +100,7 @@ namespace Application.Infrastructure.Presenters
 
             if (variableType != expressionType)
             {
-                _errorHandler.HandleError(new InvalidTypeException(expressionType, variableType!.Type));
+                _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, variableType!.Type));
             }
 
             return new NoneType();
@@ -122,7 +122,7 @@ namespace Application.Infrastructure.Presenters
 
             if (expressionType == null && node.Type == null)
             {
-                _errorHandler.HandleError(new UnresolvableVarTypeException(node.Identifier.Name));
+                _errorHandler.HandleError(new UnresolvableVarTypeException(node.Identifier.Name, node.Position));
             }
             else if (node.Type == null)
             {
@@ -130,12 +130,12 @@ namespace Application.Infrastructure.Presenters
             }
             else if (!node.Type.Equals(expressionType))
             {
-                _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Type.Type));
+                _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, node.Type.Type));
             }
 
             if (!_context!.Scope.TryAdd(node.Identifier.Name, node.Type!))
             {
-                _errorHandler.HandleError(new VariableRedefiniitionException(node.Identifier.Name));
+                _errorHandler.HandleError(new VariableRedefiniitionException(node.Identifier.Name, node.Position));
             }
 
             return new NoneType();
@@ -149,11 +149,11 @@ namespace Application.Infrastructure.Presenters
             {
                 if (_context.ReturnType == new NoneType())
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, _context!.ReturnType.Type));
+                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, _context!.ReturnType.Type));
                 }
                 else
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, TypeEnum.VOID));
+                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, TypeEnum.VOID));
                 }
             }
 
@@ -166,7 +166,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!checkType(conditionType, TypeEnum.BOOL))
             {
-                _errorHandler.HandleError(new InvalidTypeException(conditionType, TypeEnum.BOOL));
+                _errorHandler.HandleError(new InvalidTypeException(conditionType, node.Position, TypeEnum.BOOL));
             }
 
             node.Statement.Accept(this);
@@ -180,7 +180,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!checkType(conditionType, TypeEnum.BOOL))
             {
-                _errorHandler.HandleError(new InvalidTypeException(conditionType, TypeEnum.BOOL));
+                _errorHandler.HandleError(new InvalidTypeException(conditionType, node.Position, TypeEnum.BOOL));
             }
 
             node.ThenStatement.Accept(this);
@@ -199,14 +199,14 @@ namespace Application.Infrastructure.Presenters
 
             if (collectionType!.GetType() != typeof(GenericType))
             {
-                _errorHandler.HandleError(new InvalidTypeException(collectionType, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(collectionType, node.Position, TypeEnum.ACCOUNT));
             }
 
             var genericCollectionType = (GenericType)collectionType;
 
             if (node.Parameter.Type != genericCollectionType)
             {
-                _errorHandler.HandleError(new InvalidTypeException(genericCollectionType, node.Parameter.Type.Type));
+                _errorHandler.HandleError(new InvalidTypeException(genericCollectionType, node.Position, node.Parameter.Type.Type));
             }
 
             node.Statement.Accept(this);
@@ -220,7 +220,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
-                _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.ACCOUNT));
             }
 
             var valueExpression = node.ValueExpression.Accept(this);
@@ -229,14 +229,14 @@ namespace Application.Infrastructure.Presenters
             {
                 if (!checkType(valueExpression, TypeEnum.CURRENCY))
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, node.Position, TypeEnum.CURRENCY));
                 }
             }
             else
             {
                 if (!checkType(valueExpression, TypeEnum.INT, TypeEnum.DECIMAL))
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, node.Position, TypeEnum.CURRENCY));
                 }
             }
 
@@ -249,7 +249,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
-                _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.ACCOUNT));
             }
 
             var valueExpression = node.ValueExpression.Accept(this);
@@ -258,14 +258,14 @@ namespace Application.Infrastructure.Presenters
             {
                 if (!checkType(valueExpression, TypeEnum.CURRENCY))
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, node.Position, TypeEnum.CURRENCY));
                 }
             }
             else
             {
                 if (!checkType(valueExpression, TypeEnum.INT, TypeEnum.DECIMAL))
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, TypeEnum.CURRENCY));
+                    _errorHandler.HandleError(new InvalidTypeException(valueExpression, node.Position, TypeEnum.CURRENCY));
                 }
             }
 
@@ -275,7 +275,7 @@ namespace Application.Infrastructure.Presenters
 
                 if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(accountToExpression, TypeEnum.ACCOUNT));
+                    _errorHandler.HandleError(new InvalidTypeException(accountToExpression, node.Position, TypeEnum.ACCOUNT));
                 }
             }
 
@@ -374,7 +374,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!checkType(first, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY))
             {
-                _errorHandler.HandleError(new InvalidTypeException(null, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY));
+                _errorHandler.HandleError(new InvalidTypeException(null, node.Position, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY));
             }
 
             foreach (var operand in node.Operands)
@@ -383,7 +383,7 @@ namespace Application.Infrastructure.Presenters
 
                 if (first!.Name != next?.Name)
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(next, first!.Type));
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, first!.Type));
                 }
             }
 
@@ -396,7 +396,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!checkType(first, TypeEnum.INT, TypeEnum.DECIMAL))
             {
-                _errorHandler.HandleError(new InvalidTypeException(null, TypeEnum.INT, TypeEnum.DECIMAL));
+                _errorHandler.HandleError(new InvalidTypeException(null, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
             }
 
             foreach (var operand in node.Operands)
@@ -405,7 +405,7 @@ namespace Application.Infrastructure.Presenters
 
                 if (first!.Type != next?.Type)
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(next, first!.Type));
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, first!.Type));
                 }
             }
 
@@ -423,7 +423,7 @@ namespace Application.Infrastructure.Presenters
                     return first;
                 }
 
-                _errorHandler.HandleError(new InvalidTypeException(first, TypeEnum.INT, TypeEnum.DECIMAL));
+                _errorHandler.HandleError(new InvalidTypeException(first, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
 
                 return new BasicType(TypeName.INT, TypeEnum.INT);
             }
@@ -435,7 +435,7 @@ namespace Application.Infrastructure.Presenters
                     return first;
                 }
 
-                _errorHandler.HandleError(new InvalidTypeException(first, TypeEnum.BOOL));
+                _errorHandler.HandleError(new InvalidTypeException(first, node.Position, TypeEnum.BOOL));
                 return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
             }
 
@@ -448,7 +448,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!checkType(next, TypeEnum.TYPE))
             {
-                _errorHandler.HandleError(new InvalidTypeException(next, TypeEnum.TYPE));
+                _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.TYPE));
             }
 
             return ((TypeType)next!).OfType;
@@ -466,7 +466,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!_context!.CallableSet.TryFind(callDescription, out var returnType))
             {
-                _errorHandler?.HandleError(new FunctionNotDeclaredException(callDescription));
+                _errorHandler?.HandleError(new FunctionNotDeclaredException(callDescription, node.Position));
             }
 
             return returnType!;
@@ -478,7 +478,7 @@ namespace Application.Infrastructure.Presenters
 
             if (first?.Type == null)
             {
-                _errorHandler.HandleError(new InvalidTypeException(null, TypeEnum.DECIMAL));
+                _errorHandler.HandleError(new InvalidTypeException(null, node.Position, TypeEnum.DECIMAL));
             }
 
             foreach (var operand in node.Operands)
@@ -487,7 +487,7 @@ namespace Application.Infrastructure.Presenters
 
                 if (first!.Type != next?.Type)
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(next, TypeEnum.INT, TypeEnum.DECIMAL));
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
                 }
             }
 
@@ -500,14 +500,14 @@ namespace Application.Infrastructure.Presenters
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
-                _errorHandler.HandleError(new InvalidTypeException(accountExpression, TypeEnum.GENERIC));
+                _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.GENERIC));
             }
 
             var prctExpression = node.SecondOperand.Accept(this);
 
             if (!checkType(prctExpression, TypeEnum.INT, TypeEnum.DECIMAL))
             {
-                _errorHandler.HandleError(new InvalidTypeException(prctExpression, TypeEnum.INT, TypeEnum.DECIMAL));
+                _errorHandler.HandleError(new InvalidTypeException(prctExpression, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
             }
 
             return new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL);
@@ -519,7 +519,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!_context!.ClassSet.TryFindConstructor(node.Type, parameterTypes))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(node.Type.Name));
+                _errorHandler?.HandleError(new ClassNotDeclaredException(node.Type.Name, node.Position));
             }
 
             return node.Type;
@@ -531,7 +531,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!_context!.ClassSet.TryFindProperty(objectType, node.Property, out var propertyType))
             {
-                _errorHandler?.HandleError(new PropertyNotDeclaredException(objectType.Name, node.Property));
+                _errorHandler?.HandleError(new PropertyNotDeclaredException(objectType.Name, node.Property, node.Position));
             }
 
             return propertyType!;
@@ -543,7 +543,7 @@ namespace Application.Infrastructure.Presenters
 
             if (!objectType.Name.Equals(TypeName.COLLECTION))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
             }
 
             return (objectType as GenericType)!.ParametrisingType;
@@ -557,7 +557,7 @@ namespace Application.Infrastructure.Presenters
             if (!_context!.ClassSet.TryFindMethod(
                 objectType, new FunctionCallExprDescription(node.Method, parameterTypes), out var returnType))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name));
+                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
             }
 
             return returnType!;

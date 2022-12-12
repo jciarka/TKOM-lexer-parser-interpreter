@@ -15,15 +15,15 @@ namespace Application.Models.Exceptions.SourseParser
     {
         public string? Variable { get; }
 
-        public UnresolvableVarTypeException(string variable)
-            : base(new CharacterPosition(), prepareMessage(new CharacterPosition(), variable))
+        public UnresolvableVarTypeException(string variable, RulePosition position)
+            : base(new CharacterPosition(position), prepareMessage(position, variable))
         {
             Variable = variable;
         }
 
-        private static string prepareMessage(CharacterPosition position, string variable)
+        private static string prepareMessage(RulePosition position, string variable)
         {
-            return $"(LINE: {position.Line}, column: {position.Column}) " +
+            return $"(LINE: {position.Line}) " +
                 $"Can't resolve VAR type for variable {variable} - expression is missing or does not return a value";
         }
     }

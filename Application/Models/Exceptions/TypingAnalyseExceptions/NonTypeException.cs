@@ -1,4 +1,5 @@
-﻿using Application.Models.Types;
+﻿using Application.Models.Grammar;
+using Application.Models.Types;
 
 namespace Application.Models.Exceptions.SourseParser
 {
@@ -6,15 +7,15 @@ namespace Application.Models.Exceptions.SourseParser
     {
         public IEnumerable<TypeEnum> ExpectedTypes { get; }
 
-        public NonTypeException(params TypeEnum[] expectedTypes)
-            : base(new CharacterPosition(), prepareMessage(new CharacterPosition(), expectedTypes))
+        public NonTypeException(RulePosition position, params TypeEnum[] expectedTypes)
+            : base(new CharacterPosition(position), prepareMessage(position, expectedTypes))
         {
             ExpectedTypes = expectedTypes;
         }
 
-        private static string prepareMessage(CharacterPosition position, IEnumerable<TypeEnum> expectedTypes)
+        private static string prepareMessage(RulePosition position, IEnumerable<TypeEnum> expectedTypes)
         {
-            return $"(LINE: {position.Line}, column: {position.Column}) " +
+            return $"(LINE: {position.Line}) " +
               $"Expression returns no type: expected \"{string.Join(" / ", expectedTypes)}\"";
         }
     }

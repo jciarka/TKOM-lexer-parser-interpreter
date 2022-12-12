@@ -45,7 +45,7 @@ namespace Application.Examples
 
         public static void Example2()
         {
-            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd2.txt");
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd2_error.txt");
 
             using (var reader = new FileSourceReader(path))
             using (var errorReader = new FileSourceRandomReader(path))

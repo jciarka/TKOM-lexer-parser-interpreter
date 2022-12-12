@@ -15,15 +15,15 @@ namespace Application.Models.Exceptions.SourseParser
     {
         public string? Variable { get; }
 
-        public VariableRedefiniitionException(string variable)
-            : base(new CharacterPosition(), prepareMessage(new CharacterPosition(), variable))
+        public VariableRedefiniitionException(string variable, RulePosition position)
+            : base(new CharacterPosition(position), prepareMessage(position, variable))
         {
             Variable = variable;
         }
 
-        private static string prepareMessage(CharacterPosition position, string variable)
+        private static string prepareMessage(RulePosition position, string variable)
         {
-            return $"(LINE: {position.Line}, column: {position.Column}) " +
+            return $"(LINE: {position.Line}) " +
                 $"Variable {variable} redefinition atempt";
         }
     }
