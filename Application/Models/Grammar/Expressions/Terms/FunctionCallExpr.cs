@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
         public string Name { get; }
         public IEnumerable<ArgumentBase> Arguments { get; }
 
-        public FunctionCallExpr(string name, IEnumerable<ArgumentBase> arguments)
+        public FunctionCallExpr(string name, IEnumerable<ArgumentBase> arguments, RulePosition position) : base(position)
         {
             Name = name;
             Arguments = arguments;

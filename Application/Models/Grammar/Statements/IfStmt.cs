@@ -14,7 +14,7 @@ namespace Application.Models.Grammar
         public StatementBase ThenStatement { get; }
         public StatementBase? ElseStatement { get; }
 
-        public IfStmt(ExpressionBase condition, StatementBase thenStatement, StatementBase? elseStatement = null)
+        public IfStmt(ExpressionBase condition, StatementBase thenStatement, RulePosition position, StatementBase? elseStatement = null) : base(position)
         {
             Condition = condition;
             ThenStatement = thenStatement;

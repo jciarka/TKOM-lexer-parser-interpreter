@@ -9,7 +9,7 @@ namespace Application.Models.Grammar
         public ExpressionBase FirstOperand { get; }
         public IEnumerable<Tuple<TokenType, ExpressionBase>> Operands { get; }
 
-        public AdditiveExpr(ExpressionBase firstOperand, IEnumerable<Tuple<TokenType, ExpressionBase>> operands)
+        public AdditiveExpr(ExpressionBase firstOperand, IEnumerable<Tuple<TokenType, ExpressionBase>> operands, RulePosition position) : base(position)
         {
             FirstOperand = firstOperand;
             Operands = operands;

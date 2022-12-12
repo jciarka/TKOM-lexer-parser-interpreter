@@ -8,5 +8,11 @@ namespace Application.Models.Grammar
 {
     public abstract class GrammarRuleBase
     {
+        protected GrammarRuleBase(RulePosition position)
+        {
+            Position = position;
+        }
+
+        public RulePosition Position { get; }
     }
 }

@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
         public TypeBase Type { get; }
         public string Identifier { get; set; }
 
-        public Parameter(TypeBase type, string identifier)
+        public Parameter(TypeBase type, string identifier, RulePosition position) : base(position)
         {
             Type = type;
             Identifier = identifier;

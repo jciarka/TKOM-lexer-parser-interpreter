@@ -14,7 +14,7 @@ namespace Application.Models.Grammar
         public string Method { get; }
         public IEnumerable<ArgumentBase> Arguments { get; }
 
-        public ObjectMethodExpr(ExpressionBase @object, string method, IEnumerable<ArgumentBase> arguments)
+        public ObjectMethodExpr(ExpressionBase @object, string method, IEnumerable<ArgumentBase> arguments, RulePosition position) : base(position)
         {
             Object = @object;
             Method = method;

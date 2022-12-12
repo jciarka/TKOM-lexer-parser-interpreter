@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
         public TypeBase Type { get; }
         public IEnumerable<ArgumentBase> Arguments { get; }
 
-        public ConstructiorCallExpr(TypeBase type, IEnumerable<ArgumentBase> arguments)
+        public ConstructiorCallExpr(TypeBase type, IEnumerable<ArgumentBase> arguments, RulePosition position) : base(position)
         {
             Type = type;
             Arguments = arguments;

@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
         public ExpressionBase OryginalExpression { get; }
         public ExpressionBase TypeExpression { get; }
 
-        public ConversionExpr(ExpressionBase oryginalExpression, ExpressionBase typeExpression)
+        public ConversionExpr(ExpressionBase oryginalExpression, ExpressionBase typeExpression, RulePosition position) : base(position)
         {
             OryginalExpression = oryginalExpression;
             TypeExpression = typeExpression;

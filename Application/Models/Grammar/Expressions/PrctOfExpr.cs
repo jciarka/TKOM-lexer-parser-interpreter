@@ -9,7 +9,7 @@ namespace Application.Models.Grammar
         public ExpressionBase FirstOperand { get; }
         public ExpressionBase SecondOperand { get; }
 
-        public PrctOfExpr(ExpressionBase firstOperand, ExpressionBase secondOperand)
+        public PrctOfExpr(ExpressionBase firstOperand, ExpressionBase secondOperand, RulePosition position) : base(position)
         {
             FirstOperand = firstOperand;
             SecondOperand = secondOperand;

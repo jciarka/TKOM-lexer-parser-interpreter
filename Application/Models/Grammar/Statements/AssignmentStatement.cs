@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
     {
         public ExpressionBase Expression { get; }
 
-        public AssignmentStatementBase(ExpressionBase expression)
+        public AssignmentStatementBase(ExpressionBase expression, RulePosition position) : base(position)
         {
             Expression = expression;
         }
@@ -22,7 +22,7 @@ namespace Application.Models.Grammar
     {
         public Identifier Identifier { get; }
 
-        public IdentifierAssignmentStatement(Identifier identifier, ExpressionBase expression) : base(expression)
+        public IdentifierAssignmentStatement(Identifier identifier, ExpressionBase expression, RulePosition position) : base(expression, position)
         {
             Identifier = identifier;
         }
@@ -42,7 +42,7 @@ namespace Application.Models.Grammar
     {
         public ObjectPropertyExpr Property { get; }
 
-        public PropertyAssignmentStatement(ObjectPropertyExpr property, ExpressionBase expression) : base(expression)
+        public PropertyAssignmentStatement(ObjectPropertyExpr property, ExpressionBase expression, RulePosition position) : base(expression, position)
         {
             Property = property;
         }
@@ -62,7 +62,7 @@ namespace Application.Models.Grammar
     {
         public ObjectIndexExpr IndexExpr { get; }
 
-        public IndexAssignmentStatement(ObjectIndexExpr indexExpr, ExpressionBase expression) : base(expression)
+        public IndexAssignmentStatement(ObjectIndexExpr indexExpr, ExpressionBase expression, RulePosition position) : base(expression, position)
         {
             IndexExpr = indexExpr;
         }

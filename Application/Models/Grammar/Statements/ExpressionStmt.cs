@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
     {
         public ExpressionBase RightExpression { get; }
 
-        public ExpressionStmt(ExpressionBase rValue)
+        public ExpressionStmt(ExpressionBase rValue, RulePosition position) : base(position)
         {
             RightExpression = rValue;
         }

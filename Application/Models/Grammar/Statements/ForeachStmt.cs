@@ -14,7 +14,7 @@ namespace Application.Models.Grammar
         public ExpressionBase CollectionExpression { get; }
         public StatementBase Statement { get; }
 
-        public ForeachStmt(Parameter parameter, ExpressionBase collectionExpression, StatementBase statement)
+        public ForeachStmt(Parameter parameter, ExpressionBase collectionExpression, StatementBase statement, RulePosition position) : base(position)
         {
             Parameter = parameter;
             CollectionExpression = collectionExpression;

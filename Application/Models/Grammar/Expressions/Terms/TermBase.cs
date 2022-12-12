@@ -8,5 +8,8 @@ namespace Application.Models.Grammar
 {
     public abstract class TermBase : ExpressionBase
     {
+        protected TermBase(RulePosition position) : base(position)
+        {
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace Application.Models.Grammar
         public ExpressionBase AccountExpression { get; }
         public ExpressionBase ValueExpression { get; }
 
-        public FinancialToStmt(ExpressionBase accountExpression, TokenType @operator, ExpressionBase valueExpression)
+        public FinancialToStmt(ExpressionBase accountExpression, TokenType @operator, ExpressionBase valueExpression, RulePosition position) : base(position)
         {
             Operator = @operator;
             ValueExpression = valueExpression;

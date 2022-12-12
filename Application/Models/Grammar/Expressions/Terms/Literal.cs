@@ -19,7 +19,7 @@ namespace Application.Models.Grammar
         public decimal? DecimalValue { get; set; }
         public TypeBase? ValueType { get; set; }
 
-        public Literal(TypeBase typeBase, Token token)
+        public Literal(TypeBase typeBase, Token token, RulePosition position) : base(position)
         {
             Type = typeBase;
 
@@ -29,13 +29,13 @@ namespace Application.Models.Grammar
             StringValue = token.StringValue;
         }
 
-        public Literal(string currencyType, Token numericLiteral)
+        public Literal(string currencyType, Token numericLiteral, RulePosition position) : base(position)
         {
             Type = new BasicType(currencyType, Types.TypeEnum.CURRENCY);
             DecimalValue = numericLiteral.DecimalValue ?? numericLiteral.IntValue;
         }
 
-        public Literal(TypeBase type)
+        public Literal(TypeBase type, RulePosition position) : base(position)
         {
             Type = new TypeType(type);
             ValueType = type;

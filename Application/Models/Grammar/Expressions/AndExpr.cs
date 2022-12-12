@@ -9,7 +9,7 @@ namespace Application.Models.Grammar
         public ExpressionBase FirstOperand { get; }
         public IEnumerable<ExpressionBase> Operands { get; }
 
-        public AndExpr(ExpressionBase firstOperand, IEnumerable<ExpressionBase> operands)
+        public AndExpr(ExpressionBase firstOperand, IEnumerable<ExpressionBase> operands, RulePosition position) : base(position)
         {
             FirstOperand = firstOperand;
             Operands = operands;

@@ -30,7 +30,7 @@ namespace Application.Infrastructure.SourceParser
         {
             var functions = parseFunctionDeclarations();
 
-            return new ProgramRoot(functions);
+            return new ProgramRoot(functions, functions.First().Position);
         }
 
         private IEnumerable<FunctionDecl> parseFunctionDeclarations()
@@ -66,6 +66,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             TypeBase? type = checkTypeAndAdvance(TokenType.VOID) ? new NoneType() : parseType();
 
             // function name
@@ -105,7 +106,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
             }
 
-            function = new FunctionDecl(type, name, parameters, (BlockStmt)block!);
+            function = new FunctionDecl(type, name, parameters, (BlockStmt)block!, position);
 
             return true;
         }
@@ -145,9 +146,9 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var identifier = getCurrentAndAdvance().Lexeme!;
+            var identifier = getCurrentAndAdvance();
 
-            return new Parameter(type, identifier);
+            return new Parameter(type, identifier.Lexeme!, new RulePosition(identifier.Position!));
         }
 
         private bool tryParseBlock(out StatementBase? block)
@@ -161,6 +162,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             advance();
 
             // statement
@@ -180,7 +182,7 @@ namespace Application.Infrastructure.SourceParser
 
             advance();
 
-            block = new BlockStmt(statements);
+            block = new BlockStmt(statements, position);
             return true;
         }
 
@@ -229,6 +231,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             advance(); // IF
 
             // condition
@@ -261,12 +264,13 @@ namespace Application.Infrastructure.SourceParser
                 };
             }
 
-            statement = new IfStmt(expression, thenStatement!, elseStatement);
+            statement = new IfStmt(expression, thenStatement!, position, elseStatement);
             return true;
         }
 
         private bool tryParseForeachStmt(out StatementBase? statement)
         {
+            var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.FOREACH))
             {
                 statement = null;
@@ -299,12 +303,13 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
             };
 
-            statement = new ForeachStmt(parameter, expression, bodyStatement!);
+            statement = new ForeachStmt(parameter, expression, bodyStatement!, position);
             return true;
         }
 
         private bool tryParseReturnStmt(out StatementBase? statement)
         {
+            var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.RETURN))
             {
                 statement = null;
@@ -313,11 +318,11 @@ namespace Application.Infrastructure.SourceParser
 
             if (checkTypeAndAdvance(TokenType.SEMICOLON))
             {
-                statement = new ReturnStmt();
+                statement = new ReturnStmt(position);
             }
             else
             {
-                statement = new ReturnStmt(parseExpression());
+                statement = new ReturnStmt(position, parseExpression());
                 skipSemicolon();
             }
 
@@ -326,21 +331,22 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseExpressionStmt(out StatementBase? statement)
         {
+            var position = new RulePosition(current.Position!);
             var expression = parseExpression();
 
-            if (tryParseAssignmentExpression(expression, out statement))
+            if (tryParseAssignmentExpression(expression, position, out statement))
             {
                 skipSemicolon();
                 return true;
             }
 
-            if (tryParseFinancialFrom(expression, out statement))
+            if (tryParseFinancialFrom(expression, position, out statement))
             {
                 skipSemicolon();
                 return true;
             }
 
-            if (tryParseFinancialTo(expression, out statement))
+            if (tryParseFinancialTo(expression, position, out statement))
             {
                 skipSemicolon();
                 return true;
@@ -348,11 +354,11 @@ namespace Application.Infrastructure.SourceParser
 
             skipSemicolon();
 
-            statement = new ExpressionStmt(expression);
+            statement = new ExpressionStmt(expression, position);
             return true;
         }
 
-        private bool tryParseFinancialFrom(ExpressionBase expression, out StatementBase? statement)
+        private bool tryParseFinancialFrom(ExpressionBase expression, RulePosition position, out StatementBase? statement)
         {
             if (!checkType(TokenType.TRANSFER_FROM, TokenType.TRANSFER_PRCT_FROM))
             {
@@ -370,12 +376,12 @@ namespace Application.Infrastructure.SourceParser
                 accountToExpression = parseExpression();
             }
 
-            statement = new FinancialFromStmt(expression, operatorToken.Type, valueExpression, accountToExpression);
+            statement = new FinancialFromStmt(expression, operatorToken.Type, valueExpression, position, accountToExpression);
 
             return true;
         }
 
-        private bool tryParseFinancialTo(ExpressionBase expression, out StatementBase? statement)
+        private bool tryParseFinancialTo(ExpressionBase expression, RulePosition position, out StatementBase? statement)
         {
             if (!checkType(TokenType.TRANSFER_TO, TokenType.TRANSFER_PRCT_TO))
             {
@@ -387,12 +393,12 @@ namespace Application.Infrastructure.SourceParser
 
             var valueExpression = parseExpression();
 
-            statement = new FinancialToStmt(expression, operatorToken.Type, valueExpression);
+            statement = new FinancialToStmt(expression, operatorToken.Type, valueExpression, position);
 
             return true;
         }
 
-        private bool tryParseAssignmentExpression(ExpressionBase lValueExpression, out StatementBase? assignmentStatement)
+        private bool tryParseAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? assignmentStatement)
         {
             if (!checkTypeAndAdvance(TokenType.EQUAL))
             {
@@ -400,17 +406,17 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            if (tryParseIdentifierAssignmentExpression(lValueExpression, out assignmentStatement))
+            if (tryParseIdentifierAssignmentExpression(lValueExpression, position, out assignmentStatement))
             {
                 return true;
             }
 
-            if (tryParsePropertyAssignmentExpression(lValueExpression, out assignmentStatement))
+            if (tryParsePropertyAssignmentExpression(lValueExpression, position, out assignmentStatement))
             {
                 return true;
             }
 
-            if (tryParseIndexAssignmentExpression(lValueExpression, out assignmentStatement))
+            if (tryParseIndexAssignmentExpression(lValueExpression, position, out assignmentStatement))
             {
                 return true;
             }
@@ -419,7 +425,7 @@ namespace Application.Infrastructure.SourceParser
             return false;
         }
 
-        private bool tryParseIdentifierAssignmentExpression(ExpressionBase lValueExpression, out StatementBase? statement)
+        private bool tryParseIdentifierAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
         {
             if (lValueExpression.GetType() != typeof(Identifier))
             {
@@ -429,11 +435,11 @@ namespace Application.Infrastructure.SourceParser
 
             var rValueExpression = parseExpression();
 
-            statement = new IdentifierAssignmentStatement((Identifier)lValueExpression, rValueExpression);
+            statement = new IdentifierAssignmentStatement((Identifier)lValueExpression, rValueExpression, position);
             return true;
         }
 
-        private bool tryParsePropertyAssignmentExpression(ExpressionBase lValueExpression, out StatementBase? statement)
+        private bool tryParsePropertyAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
         {
             if (lValueExpression.GetType() != typeof(ObjectPropertyExpr))
             {
@@ -443,11 +449,11 @@ namespace Application.Infrastructure.SourceParser
 
             var rValueExpression = parseExpression();
 
-            statement = new PropertyAssignmentStatement((ObjectPropertyExpr)lValueExpression, rValueExpression);
+            statement = new PropertyAssignmentStatement((ObjectPropertyExpr)lValueExpression, rValueExpression, position);
             return true;
         }
 
-        private bool tryParseIndexAssignmentExpression(ExpressionBase lValueExpression, out StatementBase? statement)
+        private bool tryParseIndexAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
         {
             if (lValueExpression.GetType() != typeof(ObjectIndexExpr))
             {
@@ -457,7 +463,7 @@ namespace Application.Infrastructure.SourceParser
 
             var rValueExpression = parseExpression();
 
-            statement = new IndexAssignmentStatement((ObjectIndexExpr)lValueExpression, rValueExpression);
+            statement = new IndexAssignmentStatement((ObjectIndexExpr)lValueExpression, rValueExpression, position);
             return true;
         }
 
@@ -469,6 +475,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             var typeToken = current;
             var type = checkTypeAndAdvance(TokenType.VAR) ? null : parseType();
 
@@ -477,7 +484,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var name = getCurrentAndAdvance().Lexeme!;
+            var nameToken = getCurrentAndAdvance();
 
             if (type == null && !checkType(TokenType.EQUAL)) // var must be assgned
             {
@@ -495,7 +502,12 @@ namespace Application.Infrastructure.SourceParser
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.SEMICOLON));
             }
 
-            statement = new DeclarationStmt(new Identifier(name), valueExpression, type);
+            statement = new DeclarationStmt(
+                new Identifier(nameToken.Lexeme!, new RulePosition(nameToken.Position!)),
+                position,
+                valueExpression,
+                type);
+
             return true;
         }
 
@@ -506,6 +518,7 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseOrExpression()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parseAndExpression();
             var rExpressions = new List<ExpressionBase>();
 
@@ -516,7 +529,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new OrExpr(lExpression, rExpressions);
+                return new OrExpr(lExpression, rExpressions, position);
             }
 
             return lExpression;
@@ -524,6 +537,7 @@ namespace Application.Infrastructure.SourceParser
 
         ExpressionBase parseAndExpression()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parseComparativeExpr();
             var rExpressions = new List<ExpressionBase>();
 
@@ -534,7 +548,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new AndExpr(lExpression, rExpressions);
+                return new AndExpr(lExpression, rExpressions, position);
             }
 
             return lExpression;
@@ -542,6 +556,7 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseComparativeExpr()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parseAdditiveExpr();
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
@@ -559,7 +574,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new ComparativeExpr(lExpression, rExpressions);
+                return new ComparativeExpr(lExpression, rExpressions, position);
             }
 
             return lExpression;
@@ -567,6 +582,7 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseAdditiveExpr()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parseMultiplicativeExpr();
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
@@ -578,7 +594,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new AdditiveExpr(lExpression, rExpressions);
+                return new AdditiveExpr(lExpression, rExpressions, position);
             }
 
             return lExpression;
@@ -586,6 +602,7 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseMultiplicativeExpr()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parseNegatonExpr();
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
@@ -597,7 +614,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (rExpressions.Count() > 0)
             {
-                return new MultiplicativeExpr(lExpression, rExpressions);
+                return new MultiplicativeExpr(lExpression, rExpressions, position);
             }
 
             return lExpression;
@@ -605,9 +622,10 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseNegatonExpr()
         {
+            var position = new RulePosition(current.Position!);
             if (checkType(TokenType.BANG, TokenType.MINUS))
             {
-                return new NegativeExpr(getCurrentAndAdvance().Type, parseConversionExpr());
+                return new NegativeExpr(getCurrentAndAdvance().Type, parseConversionExpr(), position);
             }
 
             return parseConversionExpr();
@@ -615,11 +633,12 @@ namespace Application.Infrastructure.SourceParser
 
         private ExpressionBase parseConversionExpr()
         {
+            var position = new RulePosition(current.Position!);
             var lExpression = parsePrctOfExpr();
 
             if (checkTypeAndAdvance(TokenType.TO))
             {
-                return new ConversionExpr(lExpression, parseObjectExpr());
+                return new ConversionExpr(lExpression, parseObjectExpr(), position);
             }
 
             return lExpression;
@@ -631,7 +650,7 @@ namespace Application.Infrastructure.SourceParser
 
             if (checkTypeAndAdvance(TokenType.PRCT_OF))
             {
-                return new PrctOfExpr(lExpression, parseExpression());
+                return new PrctOfExpr(lExpression, parseExpression(), lExpression.Position);
             }
 
             return lExpression;
@@ -660,6 +679,7 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseObjectPrtopertyOrMethodExpression(ExpressionBase subExpression, out ObjectExprBase? newExpression)
         {
+            var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.DOT))
             {
                 newExpression = null;
@@ -682,11 +702,11 @@ namespace Application.Infrastructure.SourceParser
                     _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
-                newExpression = new ObjectMethodExpr(subExpression, name, arguments);
+                newExpression = new ObjectMethodExpr(subExpression, name, arguments, position);
             }
             else
             {
-                newExpression = new ObjectPropertyExpr(subExpression, name);
+                newExpression = new ObjectPropertyExpr(subExpression, name, position);
             }
 
             return true;
@@ -694,6 +714,8 @@ namespace Application.Infrastructure.SourceParser
 
         private bool tryParseObjectIndexExpression(ExpressionBase subExpression, out ObjectExprBase? newExpression)
         {
+            var position = new RulePosition(current.Position!);
+
             if (!checkTypeAndAdvance(TokenType.LEFT_BRACKET))
             {
                 newExpression = null;
@@ -707,7 +729,7 @@ namespace Application.Infrastructure.SourceParser
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_BRACKET));
             }
 
-            newExpression = new ObjectIndexExpr(subExpression, indexExpression);
+            newExpression = new ObjectIndexExpr(subExpression, indexExpression, position);
             return true;
         }
 
@@ -744,11 +766,14 @@ namespace Application.Infrastructure.SourceParser
 
         private ArgumentBase parseExpressionArgument()
         {
-            return new ExpressionArgument(parseExpression());
+            var position = new RulePosition(current.Position!);
+            return new ExpressionArgument(parseExpression(), position);
         }
 
         private bool tryParseLambdaArgument(out Lambda? lambda)
         {
+            var position = new RulePosition(current.Position!);
+
             if (!checkTypeAndAdvance(TokenType.LAMBDA))
             {
                 lambda = null;
@@ -767,14 +792,14 @@ namespace Application.Infrastructure.SourceParser
                 throw new MissingTokenException(current, TokenType.IDENTIFIER);
             }
 
-            var name = getCurrentAndAdvance().Lexeme!;
+            var nameToken = getCurrentAndAdvance();
 
             if (!checkType(TokenType.ARROW))
             {
                 throw new MissingTokenException(current, TokenType.ARROW);
             }
 
-            var parameter = new Parameter(type, name);
+            var parameter = new Parameter(type, nameToken.Lexeme!, new RulePosition(nameToken.Position!));
 
             if (!checkTypeAndAdvance(TokenType.ARROW))
             {
@@ -783,11 +808,12 @@ namespace Application.Infrastructure.SourceParser
 
             if (tryParseBlock(out StatementBase? block))
             {
-                lambda = new Lambda(parameter, block!);
+                lambda = new Lambda(parameter, block!, position);
             }
             else
             {
-                lambda = new Lambda(parameter, new ExpressionStmt(parseExpression()));
+                var expressionPosition = new RulePosition(current.Position!);
+                lambda = new Lambda(parameter, new ExpressionStmt(parseExpression(), expressionPosition), position);
             }
 
             return true;
@@ -843,6 +869,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             var name = getCurrentAndAdvance().Lexeme!;
 
             if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
@@ -854,11 +881,11 @@ namespace Application.Infrastructure.SourceParser
                     _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
-                term = new FunctionCallExpr(name, arguments);
+                term = new FunctionCallExpr(name, arguments, position);
                 return true;
             }
 
-            term = new Identifier(name);
+            term = new Identifier(name, position);
             return true;
         }
 
@@ -870,15 +897,16 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             var literal = getCurrentAndAdvance();
 
             if (checkType(TokenType.TYPE) && _options.TypesInfo!.CurrencyTypes.ContainsKey(current.ValueType!))
             {
-                term = new Literal(getCurrentAndAdvance().ValueType!, literal);
+                term = new Literal(getCurrentAndAdvance().ValueType!, literal, position);
             }
             else
             {
-                term = new Literal(parseBasicType(literal), literal);
+                term = new Literal(parseBasicType(literal), literal, position);
             }
 
             return true;
@@ -892,6 +920,7 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             var type = parseType();
 
             if (checkTypeAndAdvance(TokenType.LEFT_PAREN))
@@ -903,11 +932,11 @@ namespace Application.Infrastructure.SourceParser
                     _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
                 }
 
-                term = new ConstructiorCallExpr(type, arguments);
+                term = new ConstructiorCallExpr(type, arguments, position);
                 return true;
             }
 
-            term = new Literal(type);
+            term = new Literal(type, position);
             return true;
         }
 

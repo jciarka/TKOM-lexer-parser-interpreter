@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
     {
         public ExpressionBase Expression { get; }
 
-        public BracedExprTerm(ExpressionBase expression)
+        public BracedExprTerm(ExpressionBase expression, RulePosition position) : base(position)
         {
             Expression = expression;
         }

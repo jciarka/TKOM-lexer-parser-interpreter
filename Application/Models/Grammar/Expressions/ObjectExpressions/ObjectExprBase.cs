@@ -10,6 +10,8 @@ namespace Application.Models.Grammar
 {
     public abstract class ObjectExprBase : ExpressionBase
     {
-
+        protected ObjectExprBase(RulePosition position) : base(position)
+        {
+        }
     }
 }

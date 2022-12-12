@@ -8,7 +8,7 @@ namespace Application.Models.Grammar
         public Parameter Parameter { get; }
         public StatementBase Stmt { get; }
 
-        public Lambda(Parameter parameter, StatementBase stmt)
+        public Lambda(Parameter parameter, StatementBase stmt, RulePosition position) : base(position)
         {
             Parameter = parameter;
             Stmt = stmt;

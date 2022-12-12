@@ -13,7 +13,7 @@ namespace Application.Models.Grammar
         public ExpressionBase Object { get; set; }
         public ExpressionBase IndexExpression { get; }
 
-        public ObjectIndexExpr(ExpressionBase @object, ExpressionBase indexExpression)
+        public ObjectIndexExpr(ExpressionBase @object, ExpressionBase indexExpression, RulePosition position) : base(position)
         {
             Object = @object;
             IndexExpression = indexExpression;

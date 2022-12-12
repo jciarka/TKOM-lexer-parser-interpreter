@@ -7,7 +7,7 @@ namespace Application.Models.Grammar
     {
         public IEnumerable<StatementBase> Statements { get; }
 
-        public BlockStmt(IEnumerable<StatementBase> statements)
+        public BlockStmt(IEnumerable<StatementBase> statements, RulePosition position) : base(position)
         {
             Statements = statements;
         }

@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
     {
         public IEnumerable<FunctionDecl> FunctionDeclaration { get; private set; }
 
-        public ProgramRoot(IEnumerable<FunctionDecl> functionDeclaration)
+        public ProgramRoot(IEnumerable<FunctionDecl> functionDeclaration, RulePosition position) : base(position)
         {
             FunctionDeclaration = functionDeclaration;
         }

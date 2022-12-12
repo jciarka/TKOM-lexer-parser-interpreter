@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
     {
         public ExpressionBase Expression { get; set; }
 
-        public ExpressionArgument(ExpressionBase expression)
+        public ExpressionArgument(ExpressionBase expression, RulePosition position) : base(position)
         {
             Expression = expression;
         }

@@ -10,7 +10,8 @@ namespace Application.Models.Grammar
         public IEnumerable<Parameter> Parameters { get; }
         public BlockStmt Block { get; }
 
-        public FunctionDecl(TypeBase type, string name, IEnumerable<Parameter> parameters, BlockStmt block)
+        public FunctionDecl(TypeBase type, string name, IEnumerable<Parameter> parameters, BlockStmt block, RulePosition position)
+            : base(position)
         {
             Type = type;
             Name = name;

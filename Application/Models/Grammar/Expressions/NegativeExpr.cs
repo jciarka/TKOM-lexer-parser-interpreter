@@ -9,7 +9,7 @@ namespace Application.Models.Grammar
         public TokenType Operator { get; }
         public ExpressionBase Operand { get; }
 
-        public NegativeExpr(TokenType @operator, ExpressionBase operand)
+        public NegativeExpr(TokenType @operator, ExpressionBase operand, RulePosition position) : base(position)
         {
             Operand = operand;
             Operator = @operator;

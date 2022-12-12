@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
     {
         public ExpressionBase? ReturnExpression { get; }
 
-        public ReturnStmt(ExpressionBase? returnExpression = null)
+        public ReturnStmt(RulePosition position, ExpressionBase? returnExpression = null) : base(position)
         {
             ReturnExpression = returnExpression;
         }

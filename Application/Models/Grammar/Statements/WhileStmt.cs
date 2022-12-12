@@ -13,7 +13,7 @@ namespace Application.Models.Grammar
         public ExpressionBase Condition { get; }
         public StatementBase Statement { get; }
 
-        public WhileStmt(ExpressionBase condition, StatementBase statement)
+        public WhileStmt(ExpressionBase condition, StatementBase statement, RulePosition position) : base(position)
         {
             Condition = condition;
             Statement = statement;

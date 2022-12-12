@@ -12,7 +12,7 @@ namespace Application.Models.Grammar
         public ExpressionBase ValueExpression { get; }
         public ExpressionBase? AccountToExpression { get; }
 
-        public FinancialFromStmt(ExpressionBase accountFromExpression, TokenType @operator, ExpressionBase valueExpression, ExpressionBase? accountToExpression = null)
+        public FinancialFromStmt(ExpressionBase accountFromExpression, TokenType @operator, ExpressionBase valueExpression, RulePosition position, ExpressionBase? accountToExpression = null) : base(position)
         {
             AccountFromExpression = accountFromExpression;
             Operator = @operator;

@@ -14,7 +14,7 @@ namespace Application.Models.Grammar
         public Identifier Identifier { get; }
         public ExpressionBase? Expression { get; }
 
-        public DeclarationStmt(Identifier identifier, ExpressionBase? expression = null, TypeBase? type = null)
+        public DeclarationStmt(Identifier identifier, RulePosition position, ExpressionBase? expression = null, TypeBase? type = null) : base(position)
         {
             Type = type;
             Identifier = identifier;

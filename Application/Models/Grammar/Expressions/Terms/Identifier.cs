@@ -7,7 +7,7 @@ namespace Application.Models.Grammar
     {
         public string Name { get; }
 
-        public Identifier(string name)
+        public Identifier(string name, RulePosition position) : base(position)
         {
             Name = name;
         }
