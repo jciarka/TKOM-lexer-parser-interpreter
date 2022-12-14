@@ -10,11 +10,11 @@ namespace Application.Models.Grammar
 {
     public class ProgramRoot : GrammarRuleBase
     {
-        public IEnumerable<FunctionDecl> FunctionDeclaration { get; private set; }
+        public IEnumerable<FunctionDecl> FunctionDeclarations { get; private set; }
 
         public ProgramRoot(IEnumerable<FunctionDecl> functionDeclaration, RulePosition position) : base(position)
         {
-            FunctionDeclaration = functionDeclaration;
+            FunctionDeclarations = functionDeclaration;
         }
 
         public void Accept(IPresenterVisitor visitor, int v)

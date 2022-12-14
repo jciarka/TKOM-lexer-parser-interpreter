@@ -11,11 +11,15 @@ namespace Application.Infrastructure.Presenters
 {
     public class GrammarPresenter : IPresenterVisitor
     {
+        // private int _depth;
+
         public void Visit(ProgramRoot node, int depth = 0)
         {
+            // _depth = 0;
+
             write(depth, "PROGRAM");
 
-            foreach (var function in node.FunctionDeclaration)
+            foreach (var function in node.FunctionDeclarations)
             {
                 function.Accept(this, depth + 1);
             }

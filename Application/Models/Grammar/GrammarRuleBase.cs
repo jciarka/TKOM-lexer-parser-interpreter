@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public abstract class GrammarRuleBase
+    public abstract class GrammarRuleBase // : IVisitable
     {
         protected GrammarRuleBase(RulePosition position)
         {

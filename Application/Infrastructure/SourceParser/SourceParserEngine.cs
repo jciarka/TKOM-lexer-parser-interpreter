@@ -78,27 +78,13 @@ namespace Application.Infrastructure.SourceParser
             var name = getCurrentAndAdvance().Lexeme!;
 
             // left parent 
-            if (!checkType(TokenType.LEFT_PAREN))
-            {
-                _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
-            }
-            else
-            {
-                advance();
-            }
+            assertTypeAndAdvance(new MissingTokenException(current, TokenType.LEFT_PAREN), TokenType.LEFT_PAREN);
 
             // parameters
             var parameters = parseParameters();
 
             // right parent
-            if (!checkType(TokenType.RIGHT_PAREN))
-            {
-                _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
-            }
-            else
-            {
-                advance();
-            }
+            assertTypeAndAdvance(new MissingTokenException(current, TokenType.RIGHT_PAREN), TokenType.RIGHT_PAREN);
 
             // block
             if (!tryParseBlock(out StatementBase? block) || block!.GetType() != typeof(BlockStmt))
@@ -115,40 +101,46 @@ namespace Application.Infrastructure.SourceParser
         {
             var parameters = new List<Parameter>();
 
-            while (checkType(TokenType.TYPE))
+            // check first parameter
+            if (!tryParseParameter(out var parameter))
             {
-                parameters.Add(parseParameter());
+                // no parameters
+                return parameters;
+            }
 
-                if (checkType(TokenType.COMMA))
+            parameters.Add(parameter!);
+
+            // if comma - another parameter expected
+            while (checkTypeAndAdvance(TokenType.COMMA))
+            {
+                if (!tryParseParameter(out parameter))
                 {
-                    advance();
+                    _errorHandler.HandleError(new MissingParameterException(current));
                 }
-                else if (!checkType(TokenType.RIGHT_PAREN))
-                {
-                    _errorHandler.HandleError(new MissingTokenException(current, TokenType.COMMA));
-                }
+
+                parameters.Add(parameter!);
             }
 
             return parameters;
         }
 
-        private Parameter parseParameter()
+        private bool tryParseParameter(out Parameter? parameter)
         {
             if (!checkType(TokenType.TYPE))
             {
-                throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
+                parameter = null;
+                return false;
+                //throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
             }
 
             var type = parseType();
 
-            if (!checkType(TokenType.IDENTIFIER))
-            {
-                throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
-            }
+            assertType(new UnexpectedTokenException(current, TokenType.IDENTIFIER), TokenType.IDENTIFIER);
 
             var identifier = getCurrentAndAdvance();
 
-            return new Parameter(type, identifier.Lexeme!, new RulePosition(identifier.Position!));
+            parameter = new Parameter(type, identifier.Lexeme!, new RulePosition(identifier.Position!));
+            return true;
         }
 
         private bool tryParseBlock(out StatementBase? block)
@@ -162,25 +154,16 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var position = new RulePosition(current.Position!);
-            advance();
+            var position = new RulePosition(getCurrentAndAdvance().Position!);
 
             // statement
-            while (!checkType(TokenType.RIGHT_BRACE, TokenType.EOF))
+            while (tryParseStatement(out var statement))
             {
-                if (tryParseStatement(out var statement))
-                {
-                    statements.Add(statement!);
-                }
+                statements.Add(statement!);
             }
 
             // right brace
-            if (!checkType(TokenType.RIGHT_BRACE))
-            {
-                throw new UnexpectedTokenException(current, TokenType.RIGHT_BRACE);
-            }
-
-            advance();
+            assertTypeAndAdvance(new UnexpectedTokenException(current, TokenType.RIGHT_BRACE), TokenType.RIGHT_BRACE);
 
             block = new BlockStmt(statements, position);
             return true;
@@ -198,8 +181,8 @@ namespace Application.Infrastructure.SourceParser
                     tryParseBlock(out statement) || // expression, assignment, financial operations
                     tryParseExpressionStmt(out statement))
                     return true;
-                else
-                    _errorHandler.HandleError(new InvalidStatementException(current));
+
+                return false;
             }
             catch (ComputingException issue)
             {
@@ -240,7 +223,10 @@ namespace Application.Infrastructure.SourceParser
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
             }
 
-            var expression = parseExpression();
+            if (!tryParseExpression(out var expression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
@@ -264,7 +250,7 @@ namespace Application.Infrastructure.SourceParser
                 };
             }
 
-            statement = new IfStmt(expression, thenStatement!, position, elseStatement);
+            statement = new IfStmt(expression!, thenStatement!, position, elseStatement);
             return true;
         }
 
@@ -283,14 +269,20 @@ namespace Application.Infrastructure.SourceParser
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.LEFT_PAREN));
             }
 
-            var parameter = parseParameter();
+            if (!tryParseParameter(out var parameter))
+            {
+                throw new MissingParameterException(current);
+            }
 
             if (!checkTypeAndAdvance(TokenType.IN))
             {
                 _errorHandler.HandleError(new UnexpectedTokenException(current, TokenType.IN));
             }
 
-            var expression = parseExpression();
+            if (!tryParseExpression(out var expression))
+            {
+                throw new MissingExpressionException(current);
+            };
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
@@ -303,7 +295,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
             };
 
-            statement = new ForeachStmt(parameter, expression, bodyStatement!, position);
+            statement = new ForeachStmt(parameter!, expression!, bodyStatement!, position);
             return true;
         }
 
@@ -316,37 +308,46 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            if (checkTypeAndAdvance(TokenType.SEMICOLON))
+            if (checkType(TokenType.SEMICOLON))
             {
                 statement = new ReturnStmt(position);
             }
+            else if (!tryParseExpression(out var expression))
+            {
+                throw new MissingExpressionException(current);
+            }
             else
             {
-                statement = new ReturnStmt(position, parseExpression());
-                skipSemicolon();
+                statement = new ReturnStmt(position, expression);
             }
 
+            skipSemicolon();
             return true;
         }
 
         private bool tryParseExpressionStmt(out StatementBase? statement)
         {
             var position = new RulePosition(current.Position!);
-            var expression = parseExpression();
 
-            if (tryParseAssignmentExpression(expression, position, out statement))
+            if (!tryParseExpression(out var expression))
+            {
+                statement = null;
+                return false;
+            };
+
+            if (tryParseAssignmentExpression(expression!, position, out statement))
             {
                 skipSemicolon();
                 return true;
             }
 
-            if (tryParseFinancialFrom(expression, position, out statement))
+            if (tryParseFinancialFrom(expression!, position, out statement))
             {
                 skipSemicolon();
                 return true;
             }
 
-            if (tryParseFinancialTo(expression, position, out statement))
+            if (tryParseFinancialTo(expression!, position, out statement))
             {
                 skipSemicolon();
                 return true;
@@ -354,7 +355,7 @@ namespace Application.Infrastructure.SourceParser
 
             skipSemicolon();
 
-            statement = new ExpressionStmt(expression, position);
+            statement = new ExpressionStmt(expression!, position);
             return true;
         }
 
@@ -368,15 +369,18 @@ namespace Application.Infrastructure.SourceParser
 
             var operatorToken = getCurrentAndAdvance();
 
-            var valueExpression = parseExpression();
-
-            ExpressionBase? accountToExpression = null;
-            if (checkTypeAndAdvance(TokenType.TRANSFER_FROM))
+            if (!tryParseExpression(out var valueExpression))
             {
-                accountToExpression = parseExpression();
+                throw new MissingExpressionException(current);
             }
 
-            statement = new FinancialFromStmt(expression, operatorToken.Type, valueExpression, position, accountToExpression);
+            ExpressionBase? accountToExpression = null;
+            if (checkTypeAndAdvance(TokenType.TRANSFER_FROM) && !tryParseExpression(out accountToExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
+
+            statement = new FinancialFromStmt(expression, operatorToken.Type, valueExpression!, position, accountToExpression);
 
             return true;
         }
@@ -391,9 +395,12 @@ namespace Application.Infrastructure.SourceParser
 
             var operatorToken = getCurrentAndAdvance();
 
-            var valueExpression = parseExpression();
+            if (!tryParseExpression(out var valueExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
-            statement = new FinancialToStmt(expression, operatorToken.Type, valueExpression, position);
+            statement = new FinancialToStmt(expression, operatorToken.Type, valueExpression!, position);
 
             return true;
         }
@@ -433,9 +440,12 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var rValueExpression = parseExpression();
+            if (!tryParseExpression(out var rValueExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
-            statement = new IdentifierAssignmentStatement((Identifier)lValueExpression, rValueExpression, position);
+            statement = new IdentifierAssignmentStatement((Identifier)lValueExpression, rValueExpression!, position);
             return true;
         }
 
@@ -447,9 +457,12 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var rValueExpression = parseExpression();
+            if (!tryParseExpression(out var rValueExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
-            statement = new PropertyAssignmentStatement((ObjectPropertyExpr)lValueExpression, rValueExpression, position);
+            statement = new PropertyAssignmentStatement((ObjectPropertyExpr)lValueExpression, rValueExpression!, position);
             return true;
         }
 
@@ -461,9 +474,12 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            var rValueExpression = parseExpression();
+            if (!tryParseExpression(out var rValueExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
-            statement = new IndexAssignmentStatement((ObjectIndexExpr)lValueExpression, rValueExpression, position);
+            statement = new IndexAssignmentStatement((ObjectIndexExpr)lValueExpression, rValueExpression!, position);
             return true;
         }
 
@@ -492,9 +508,9 @@ namespace Application.Infrastructure.SourceParser
             }
 
             ExpressionBase? valueExpression = null;
-            if (checkTypeAndAdvance(TokenType.EQUAL))
+            if (checkTypeAndAdvance(TokenType.EQUAL) && !tryParseExpression(out valueExpression))
             {
-                valueExpression = parseExpression();
+                throw new MissingExpressionException(current);
             }
 
             if (!checkTypeAndAdvance(TokenType.SEMICOLON))
@@ -505,59 +521,81 @@ namespace Application.Infrastructure.SourceParser
             statement = new DeclarationStmt(
                 new Identifier(nameToken.Lexeme!, new RulePosition(nameToken.Position!)),
                 position,
-                valueExpression,
+                valueExpression!,
                 type);
 
             return true;
         }
 
-        private ExpressionBase parseExpression()
+        private bool tryParseExpression(out ExpressionBase? expression)
         {
-            return parseOrExpression();
-        }
+            if (!tryParseAndExpression(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
 
-        private ExpressionBase parseOrExpression()
-        {
             var position = new RulePosition(current.Position!);
-            var lExpression = parseAndExpression();
             var rExpressions = new List<ExpressionBase>();
 
             while (checkTypeAndAdvance(TokenType.OR))
             {
-                rExpressions.Add(parseAndExpression());
+                if (!tryParseAndExpression(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+                rExpressions.Add(nextExpression!);
             }
 
             if (rExpressions.Count() > 0)
             {
-                return new OrExpr(lExpression, rExpressions, position);
+                expression = new OrExpr(lExpression!, rExpressions, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        ExpressionBase parseAndExpression()
+        private bool tryParseAndExpression(out ExpressionBase? expression)
         {
+            if (!tryParseComparativeExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
+
             var position = new RulePosition(current.Position!);
-            var lExpression = parseComparativeExpr();
             var rExpressions = new List<ExpressionBase>();
 
             while (checkTypeAndAdvance(TokenType.AND))
             {
-                rExpressions.Add(parseComparativeExpr());
+                if (!tryParseComparativeExpr(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+                rExpressions.Add(nextExpression!);
             }
 
             if (rExpressions.Count() > 0)
             {
-                return new AndExpr(lExpression, rExpressions, position);
+                expression = new AndExpr(lExpression!, rExpressions, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parseComparativeExpr()
+        private bool tryParseComparativeExpr(out ExpressionBase? expression)
         {
+            if (!tryParseAdditiveExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
+
             var position = new RulePosition(current.Position!);
-            var lExpression = parseAdditiveExpr();
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
             while (checkType(
@@ -568,124 +606,194 @@ namespace Application.Infrastructure.SourceParser
                 TokenType.LESS,
                 TokenType.LESS_EQUAL))
             {
-                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseAdditiveExpr());
-                rExpressions.Add(operand);
+                var @operator = getCurrentAndAdvance().Type;
+
+                if (!tryParseAdditiveExpr(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                var operand = Tuple.Create(@operator, nextExpression);
+                rExpressions.Add(operand!);
             }
 
             if (rExpressions.Count() > 0)
             {
-                return new ComparativeExpr(lExpression, rExpressions, position);
+                expression = new ComparativeExpr(lExpression!, rExpressions, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parseAdditiveExpr()
+        private bool tryParseAdditiveExpr(out ExpressionBase? expression)
         {
+            if (!tryParseMultiplicativeExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
+
             var position = new RulePosition(current.Position!);
-            var lExpression = parseMultiplicativeExpr();
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
             while (checkType(TokenType.PLUS, TokenType.MINUS))
             {
-                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseMultiplicativeExpr());
-                rExpressions.Add(operand);
+                var @operator = getCurrentAndAdvance().Type;
+
+                if (!tryParseMultiplicativeExpr(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                var operand = Tuple.Create(@operator, nextExpression);
+                rExpressions.Add(operand!);
             }
 
             if (rExpressions.Count() > 0)
             {
-                return new AdditiveExpr(lExpression, rExpressions, position);
+                expression = new AdditiveExpr(lExpression!, rExpressions, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parseMultiplicativeExpr()
+        private bool tryParseMultiplicativeExpr(out ExpressionBase? expression)
         {
+            if (!tryParseNegatonExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
+
             var position = new RulePosition(current.Position!);
-            var lExpression = parseNegatonExpr();
+
             var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
 
             while (checkType(TokenType.STAR, TokenType.SLASH))
             {
-                var operand = Tuple.Create(getCurrentAndAdvance().Type, parseNegatonExpr());
-                rExpressions.Add(operand);
+                var @operator = getCurrentAndAdvance().Type;
+
+                if (!tryParseNegatonExpr(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                var operand = Tuple.Create(@operator, nextExpression);
+                rExpressions.Add(operand!);
             }
 
             if (rExpressions.Count() > 0)
             {
-                return new MultiplicativeExpr(lExpression, rExpressions, position);
+                expression = new MultiplicativeExpr(lExpression!, rExpressions, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parseNegatonExpr()
+        private bool tryParseNegatonExpr(out ExpressionBase? expression)
         {
             var position = new RulePosition(current.Position!);
             if (checkType(TokenType.BANG, TokenType.MINUS))
             {
-                return new NegativeExpr(getCurrentAndAdvance().Type, parseConversionExpr(), position);
+                var @operator = getCurrentAndAdvance().Type;
+
+                if (!tryParseConversionExpr(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                expression = new NegativeExpr(@operator, nextExpression!, position);
+                return true;
             }
 
-            return parseConversionExpr();
+            if (!tryParseConversionExpr(out expression))
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        private ExpressionBase parseConversionExpr()
+        private bool tryParseConversionExpr(out ExpressionBase? expression)
         {
+            if (!tryParsePrctOfExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
+
             var position = new RulePosition(current.Position!);
-            var lExpression = parsePrctOfExpr();
 
             if (checkTypeAndAdvance(TokenType.TO))
             {
-                return new ConversionExpr(lExpression, parseObjectExpr(), position);
+                if (!tryParseObjectExpr(out var rExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                expression = new ConversionExpr(lExpression!, rExpression!, position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parsePrctOfExpr()
+        private bool tryParsePrctOfExpr(out ExpressionBase? expression)
         {
-            var lExpression = parseObjectExpr();
+            if (!tryParseObjectExpr(out var lExpression))
+            {
+                expression = null;
+                return false;
+            }
 
             if (checkTypeAndAdvance(TokenType.PRCT_OF))
             {
-                return new PrctOfExpr(lExpression, parseExpression(), lExpression.Position);
+                if (!tryParseExpression(out var nextExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                expression = new PrctOfExpr(lExpression!, nextExpression!, lExpression!.Position);
+                return true;
             }
 
-            return lExpression;
+            expression = lExpression;
+            return true;
         }
 
-        private ExpressionBase parseObjectExpr()
+        private bool tryParseObjectExpr(out ExpressionBase? expression)
         {
-            ExpressionBase expression = parseTerm();
-
-            while (checkType(TokenType.DOT, TokenType.LEFT_BRACKET))
+            if (!tryParseTerm(out expression))
             {
-                ObjectExprBase? newExpression;
-
-                if (tryParseObjectPrtopertyOrMethodExpression(expression, out newExpression))
-                {
-                    expression = newExpression!;
-                }
-                else if (tryParseObjectIndexExpression(expression, out newExpression))
-                {
-                    expression = newExpression!;
-                }
+                return false;
             }
 
-            return expression;
+            ExpressionBase? newExpression = null;
+            while (tryParseObjectPrtopertyOrMethodExpression(expression!, out newExpression)
+                    || tryParseObjectIndexExpression(expression!, out newExpression))
+            {
+                expression = newExpression!;
+            }
+
+            return true;
         }
 
-        private bool tryParseObjectPrtopertyOrMethodExpression(ExpressionBase subExpression, out ObjectExprBase? newExpression)
+        private bool tryParseObjectPrtopertyOrMethodExpression(ExpressionBase subExpression, out ExpressionBase? newExpression)
         {
-            var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.DOT))
             {
                 newExpression = null;
                 return false;
             }
 
+            var position = new RulePosition(current.Position!);
             if (!checkType(TokenType.IDENTIFIER))
             {
                 throw new UnexpectedTokenException(current, TokenType.IDENTIFIER);
@@ -712,24 +820,26 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseObjectIndexExpression(ExpressionBase subExpression, out ObjectExprBase? newExpression)
+        private bool tryParseObjectIndexExpression(ExpressionBase subExpression, out ExpressionBase? newExpression)
         {
-            var position = new RulePosition(current.Position!);
-
             if (!checkTypeAndAdvance(TokenType.LEFT_BRACKET))
             {
                 newExpression = null;
                 return false;
             }
 
-            var indexExpression = parseExpression();
+            var position = new RulePosition(current.Position!);
+            if (!tryParseExpression(out var indexExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_BRACKET))
             {
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_BRACKET));
             }
 
-            newExpression = new ObjectIndexExpr(subExpression, indexExpression, position);
+            newExpression = new ObjectIndexExpr(subExpression, indexExpression!, position);
             return true;
         }
 
@@ -737,7 +847,9 @@ namespace Application.Infrastructure.SourceParser
         {
             var arguments = new List<ArgumentBase>();
 
-            while (!checkType(TokenType.RIGHT_PAREN, TokenType.EOF))
+            // TO DO: parsu pierwszy argument
+
+            while (!checkType(TokenType.RIGHT_PAREN, TokenType.EOF)) //tryParseArgument
             {
                 arguments.Add(parseArgument());
 
@@ -767,18 +879,24 @@ namespace Application.Infrastructure.SourceParser
         private ArgumentBase parseExpressionArgument()
         {
             var position = new RulePosition(current.Position!);
-            return new ExpressionArgument(parseExpression(), position);
+
+            if (!tryParseExpression(out var lambdaExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
+
+            return new ExpressionArgument(lambdaExpression!, position);
         }
 
         private bool tryParseLambdaArgument(out Lambda? lambda)
         {
-            var position = new RulePosition(current.Position!);
-
             if (!checkTypeAndAdvance(TokenType.LAMBDA))
             {
                 lambda = null;
                 return false;
             }
+
+            var position = new RulePosition(current.Position!);
 
             if (!checkType(TokenType.TYPE))
             {
@@ -813,34 +931,39 @@ namespace Application.Infrastructure.SourceParser
             else
             {
                 var expressionPosition = new RulePosition(current.Position!);
-                lambda = new Lambda(parameter, new ExpressionStmt(parseExpression(), expressionPosition), position);
+
+                if (!tryParseExpression(out var lambdaExpression))
+                {
+                    throw new MissingExpressionException(current);
+                }
+
+                lambda = new Lambda(parameter, new ExpressionStmt(lambdaExpression!, expressionPosition), position);
             }
 
             return true;
         }
 
-        private ExpressionBase parseTerm()
+        private bool tryParseTerm(out ExpressionBase? expression)
         {
-            ExpressionBase? term = null;
-
-            if (tryParseParentisedExpression(out term))
+            if (tryParseParentisedExpression(out expression))
             {
-                return term!;
+                return true;
             }
-            if (tryParseTypeOrConstructor(out term))
+            if (tryParseTypeOrConstructor(out expression))
             {
-                return term!;
+                return true;
             }
-            else if (tryParseLiteral(out term))
+            else if (tryParseLiteral(out expression))
             {
-                return term!;
+                return true;
             }
-            else if (tryParseIdentifierOrFunctionCall(out term))
+            else if (tryParseIdentifierOrFunctionCall(out expression))
             {
-                return term!;
+                return true;
             }
 
-            throw new InvalidTermException(current);
+            expression = null;
+            return false;
         }
 
         private bool tryParseParentisedExpression(out ExpressionBase? term)
@@ -851,13 +974,19 @@ namespace Application.Infrastructure.SourceParser
                 return false;
             }
 
-            term = parseExpression();
+            if (!tryParseExpression(out var expression))
+            {
+                _errorHandler.HandleError(new MissingExpressionException(current));
+                term = null;
+                return false;
+            }
 
             if (!checkTypeAndAdvance(TokenType.RIGHT_PAREN))
             {
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.RIGHT_PAREN));
             }
 
+            term = expression;
             return true;
         }
 
@@ -950,6 +1079,29 @@ namespace Application.Infrastructure.SourceParser
             return false;
         }
 
+        private bool assertType(ComputingException issue, params TokenType[] types)
+        {
+            if (!checkType(types))
+            {
+                _errorHandler.HandleError(issue);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool assertTypeAndAdvance(ComputingException issue, params TokenType[] types)
+        {
+            if (!checkTypeAndAdvance(types))
+            {
+                _errorHandler.HandleError(issue);
+                return false;
+            }
+
+            return true;
+        }
+
+
         private bool checkTypeAndAdvance(params TokenType[] types)
         {
             if (types.Contains(_lexer.Current.Type))
@@ -972,7 +1124,6 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var basicTypeToken = getCurrentAndAdvance();
-
             if (checkTypeAndAdvance(TokenType.LESS))
             {
                 if (!checkType(TokenType.TYPE))

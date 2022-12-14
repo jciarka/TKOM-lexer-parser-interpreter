@@ -27,9 +27,9 @@ namespace Application.Infrastructure.Presenters
 
         public TypeBase Visit(ProgramRoot node)
         {
-            _allDeclarations = node.FunctionDeclaration;
+            _allDeclarations = node.FunctionDeclarations;
 
-            foreach (var function in node.FunctionDeclaration)
+            foreach (var function in node.FunctionDeclarations)
             {
                 try
                 {
@@ -461,8 +461,8 @@ namespace Application.Infrastructure.Presenters
 
         public TypeBase Visit(FunctionCallExpr node)
         {
-            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
-            var callDescription = new FunctionCallExprDescription(node.Name, parameterTypes);
+            var argumentTypes = node.Arguments.Select(x => x.Accept(this));
+            var callDescription = new FunctionCallExprDescription(node.Name, argumentTypes);
 
             if (!_context!.CallableSet.TryFind(callDescription, out var returnType))
             {
