@@ -8,71 +8,71 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public abstract class AssignmentStatementBase : StatementBase
+    public abstract class AssignmentStatementBase : GrammarRuleBase
     {
-        public ExpressionBase Expression { get; }
+        public IExpression Expression { get; }
 
-        public AssignmentStatementBase(ExpressionBase expression, RulePosition position) : base(position)
+        public AssignmentStatementBase(IExpression expression, RulePosition position) : base(position)
         {
             Expression = expression;
         }
     }
 
-    public class IdentifierAssignmentStatement : AssignmentStatementBase
+    public class IdentifierAssignmentStatement : AssignmentStatementBase, IStatement
     {
         public Identifier Identifier { get; }
 
-        public IdentifierAssignmentStatement(Identifier identifier, ExpressionBase expression, RulePosition position) : base(expression, position)
+        public IdentifierAssignmentStatement(Identifier identifier, IExpression expression, RulePosition position) : base(expression, position)
         {
             Identifier = identifier;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }
     }
 
-    public class PropertyAssignmentStatement : AssignmentStatementBase
+    public class PropertyAssignmentStatement : AssignmentStatementBase, IStatement, IVisitable
     {
         public ObjectPropertyExpr Property { get; }
 
-        public PropertyAssignmentStatement(ObjectPropertyExpr property, ExpressionBase expression, RulePosition position) : base(expression, position)
+        public PropertyAssignmentStatement(ObjectPropertyExpr property, IExpression expression, RulePosition position) : base(expression, position)
         {
             Property = property;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }
     }
 
-    public class IndexAssignmentStatement : AssignmentStatementBase
+    public class IndexAssignmentStatement : AssignmentStatementBase, IStatement
     {
         public ObjectIndexExpr IndexExpr { get; }
 
-        public IndexAssignmentStatement(ObjectIndexExpr indexExpr, ExpressionBase expression, RulePosition position) : base(expression, position)
+        public IndexAssignmentStatement(ObjectIndexExpr indexExpr, IExpression expression, RulePosition position) : base(expression, position)
         {
             IndexExpr = indexExpr;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

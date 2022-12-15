@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class Literal : TermBase
+    public class Literal : GrammarRuleBase, ITerm, IVisitable
     {
         public TypeBase Type { get; set; }
 
@@ -41,12 +41,12 @@ namespace Application.Models.Grammar
             ValueType = type;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

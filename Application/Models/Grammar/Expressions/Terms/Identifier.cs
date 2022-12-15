@@ -3,7 +3,7 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
-    public class Identifier : TermBase
+    public class Identifier : GrammarRuleBase, ITerm, IVisitable
     {
         public string Name { get; }
 
@@ -12,12 +12,12 @@ namespace Application.Models.Grammar
             Name = name;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

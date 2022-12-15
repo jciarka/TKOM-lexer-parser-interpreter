@@ -3,23 +3,23 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
-    public class ConversionExpr : ExpressionBase
+    public class ConversionExpr : GrammarRuleBase, IExpression, IVisitable
     {
-        public ExpressionBase OryginalExpression { get; }
-        public ExpressionBase TypeExpression { get; }
+        public IExpression OryginalExpression { get; }
+        public IExpression TypeExpression { get; }
 
-        public ConversionExpr(ExpressionBase oryginalExpression, ExpressionBase typeExpression, RulePosition position) : base(position)
+        public ConversionExpr(IExpression oryginalExpression, IExpression typeExpression, RulePosition position) : base(position)
         {
             OryginalExpression = oryginalExpression;
             TypeExpression = typeExpression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

@@ -4,23 +4,23 @@ using Application.Models.Tokens;
 
 namespace Application.Models.Grammar
 {
-    public class PrctOfExpr : ExpressionBase
+    public class PrctOfExpr : GrammarRuleBase, IExpression, IVisitable
     {
-        public ExpressionBase FirstOperand { get; }
-        public ExpressionBase SecondOperand { get; }
+        public IExpression FirstOperand { get; }
+        public IExpression SecondOperand { get; }
 
-        public PrctOfExpr(ExpressionBase firstOperand, ExpressionBase secondOperand, RulePosition position) : base(position)
+        public PrctOfExpr(IExpression firstOperand, IExpression secondOperand, RulePosition position) : base(position)
         {
             FirstOperand = firstOperand;
             SecondOperand = secondOperand;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

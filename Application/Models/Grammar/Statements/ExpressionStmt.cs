@@ -4,21 +4,21 @@ using System.Linq.Expressions;
 
 namespace Application.Models.Grammar
 {
-    public class ExpressionStmt : StatementBase
+    public class ExpressionStmt : GrammarRuleBase, IStatement, IVisitable
     {
-        public ExpressionBase RightExpression { get; }
+        public IExpression RightExpression { get; }
 
-        public ExpressionStmt(ExpressionBase rValue, RulePosition position) : base(position)
+        public ExpressionStmt(IExpression rValue, RulePosition position) : base(position)
         {
             RightExpression = rValue;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

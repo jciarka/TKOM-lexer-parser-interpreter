@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public abstract class TermBase : ExpressionBase
+    public interface ITerm : IExpression
     {
-        protected TermBase(RulePosition position) : base(position)
-        {
-        }
     }
 }

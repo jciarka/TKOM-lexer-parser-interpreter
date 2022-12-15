@@ -3,23 +3,23 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
-    public class Lambda : ArgumentBase
+    public class Lambda : GrammarRuleBase, IArgument, IVisitable
     {
         public Parameter Parameter { get; }
-        public StatementBase Stmt { get; }
+        public IStatement Stmt { get; }
 
-        public Lambda(Parameter parameter, StatementBase stmt, RulePosition position) : base(position)
+        public Lambda(Parameter parameter, IStatement stmt, RulePosition position) : base(position)
         {
             Parameter = parameter;
             Stmt = stmt;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

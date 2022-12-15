@@ -3,21 +3,21 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
-    public class BlockStmt : StatementBase
+    public class BlockStmt : GrammarRuleBase, IStatement, IVisitable
     {
-        public IEnumerable<StatementBase> Statements { get; }
+        public IEnumerable<IStatement> Statements { get; }
 
-        public BlockStmt(IEnumerable<StatementBase> statements, RulePosition position) : base(position)
+        public BlockStmt(IEnumerable<IStatement> statements, RulePosition position) : base(position)
         {
             Statements = statements;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

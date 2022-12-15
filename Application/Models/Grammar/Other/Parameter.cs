@@ -3,7 +3,7 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Grammar
 {
-    public class Parameter : GrammarRuleBase
+    public class Parameter : GrammarRuleBase, IVisitable
     {
         public TypeBase Type { get; }
         public string Identifier { get; set; }

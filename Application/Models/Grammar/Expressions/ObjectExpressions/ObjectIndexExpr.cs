@@ -8,23 +8,23 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ObjectIndexExpr : ObjectExprBase
+    public class ObjectIndexExpr : GrammarRuleBase, IObjectExpression
     {
-        public ExpressionBase Object { get; set; }
-        public ExpressionBase IndexExpression { get; }
+        public IExpression Object { get; set; }
+        public IExpression IndexExpression { get; }
 
-        public ObjectIndexExpr(ExpressionBase @object, ExpressionBase indexExpression, RulePosition position) : base(position)
+        public ObjectIndexExpr(IExpression @object, IExpression indexExpression, RulePosition position) : base(position)
         {
             Object = @object;
             IndexExpression = indexExpression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

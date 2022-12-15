@@ -8,25 +8,25 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class IfStmt : StatementBase
+    public class IfStmt : GrammarRuleBase, IStatement, IVisitable
     {
-        public ExpressionBase Condition { get; }
-        public StatementBase ThenStatement { get; }
-        public StatementBase? ElseStatement { get; }
+        public IExpression Condition { get; }
+        public IStatement ThenStatement { get; }
+        public IStatement? ElseStatement { get; }
 
-        public IfStmt(ExpressionBase condition, StatementBase thenStatement, RulePosition position, StatementBase? elseStatement = null) : base(position)
+        public IfStmt(IExpression condition, IStatement thenStatement, RulePosition position, IStatement? elseStatement = null) : base(position)
         {
             Condition = condition;
             ThenStatement = thenStatement;
             ElseStatement = elseStatement;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

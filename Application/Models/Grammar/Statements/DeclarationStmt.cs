@@ -8,25 +8,25 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class DeclarationStmt : StatementBase
+    public class DeclarationStmt : GrammarRuleBase, IStatement, IVisitable
     {
         public TypeBase? Type { get; set; }
         public Identifier Identifier { get; }
-        public ExpressionBase? Expression { get; }
+        public IExpression? Expression { get; }
 
-        public DeclarationStmt(Identifier identifier, RulePosition position, ExpressionBase? expression = null, TypeBase? type = null) : base(position)
+        public DeclarationStmt(Identifier identifier, RulePosition position, IExpression? expression = null, TypeBase? type = null) : base(position)
         {
             Type = type;
             Identifier = identifier;
             Expression = expression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

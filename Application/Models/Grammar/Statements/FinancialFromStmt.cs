@@ -5,14 +5,14 @@ using System.Linq.Expressions;
 
 namespace Application.Models.Grammar
 {
-    public class FinancialFromStmt : StatementBase
+    public class FinancialFromStmt : GrammarRuleBase, IStatement, IVisitable
     {
         public TokenType Operator { get; }
-        public ExpressionBase AccountFromExpression { get; }
-        public ExpressionBase ValueExpression { get; }
-        public ExpressionBase? AccountToExpression { get; }
+        public IExpression AccountFromExpression { get; }
+        public IExpression ValueExpression { get; }
+        public IExpression? AccountToExpression { get; }
 
-        public FinancialFromStmt(ExpressionBase accountFromExpression, TokenType @operator, ExpressionBase valueExpression, RulePosition position, ExpressionBase? accountToExpression = null) : base(position)
+        public FinancialFromStmt(IExpression accountFromExpression, TokenType @operator, IExpression valueExpression, RulePosition position, IExpression? accountToExpression = null) : base(position)
         {
             AccountFromExpression = accountFromExpression;
             Operator = @operator;
@@ -20,12 +20,12 @@ namespace Application.Models.Grammar
             AccountToExpression = accountToExpression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

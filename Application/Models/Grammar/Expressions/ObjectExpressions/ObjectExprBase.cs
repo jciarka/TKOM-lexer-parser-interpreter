@@ -8,10 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public abstract class ObjectExprBase : ExpressionBase
+    public interface IObjectExpression : IExpression, IVisitable
     {
-        protected ObjectExprBase(RulePosition position) : base(position)
-        {
-        }
     }
 }

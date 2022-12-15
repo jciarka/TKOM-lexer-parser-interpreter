@@ -8,25 +8,25 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ObjectMethodExpr : ObjectExprBase
+    public class ObjectMethodExpr : GrammarRuleBase, IObjectExpression, IVisitable
     {
-        public ExpressionBase Object { get; set; }
+        public IExpression Object { get; set; }
         public string Method { get; }
-        public IEnumerable<ArgumentBase> Arguments { get; }
+        public IEnumerable<IArgument> Arguments { get; }
 
-        public ObjectMethodExpr(ExpressionBase @object, string method, IEnumerable<ArgumentBase> arguments, RulePosition position) : base(position)
+        public ObjectMethodExpr(IExpression @object, string method, IEnumerable<IArgument> arguments, RulePosition position) : base(position)
         {
             Object = @object;
             Method = method;
             Arguments = arguments;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

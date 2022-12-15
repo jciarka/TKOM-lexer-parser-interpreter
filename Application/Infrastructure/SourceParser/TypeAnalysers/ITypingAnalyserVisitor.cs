@@ -52,6 +52,5 @@ namespace Application.Infrastructure.Presenters
         TypeBase Visit(BasicType literal);
         TypeBase Visit(GenericType literal);
         TypeBase Visit(TypeType literal);
-
     }
 }

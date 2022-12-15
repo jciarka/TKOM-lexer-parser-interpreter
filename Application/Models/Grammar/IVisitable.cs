@@ -8,13 +8,9 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public abstract class GrammarRuleBase // : IVisitable
+    public interface IVisitable
     {
-        protected GrammarRuleBase(RulePosition position)
-        {
-            Position = position;
-        }
-
-        public RulePosition Position { get; }
+        public void Accept(IPresenterVisitor visitor, int v);
+        public TypeBase Accept(ITypingAnalyseVisitor visitor);
     }
 }

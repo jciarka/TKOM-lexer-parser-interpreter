@@ -8,21 +8,21 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ReturnStmt : StatementBase
+    public class ReturnStmt : GrammarRuleBase, IStatement, IVisitable
     {
-        public ExpressionBase? ReturnExpression { get; }
+        public IExpression? ReturnExpression { get; }
 
-        public ReturnStmt(RulePosition position, ExpressionBase? returnExpression = null) : base(position)
+        public ReturnStmt(RulePosition position, IExpression? returnExpression = null) : base(position)
         {
             ReturnExpression = returnExpression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

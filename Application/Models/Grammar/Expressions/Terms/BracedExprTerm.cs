@@ -8,21 +8,21 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class BracedExprTerm : TermBase
+    public class BracedExprTerm : GrammarRuleBase, ITerm, IVisitable
     {
-        public ExpressionBase Expression { get; }
+        public IExpression Expression { get; }
 
-        public BracedExprTerm(ExpressionBase expression, RulePosition position) : base(position)
+        public BracedExprTerm(IExpression expression, RulePosition position) : base(position)
         {
             Expression = expression;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IPresenterVisitor visitor, int v)
         {
             visitor.Visit(this, v);
         }
 
-        public override TypeBase Accept(ITypingAnalyseVisitor visitor)
+        public TypeBase Accept(ITypingAnalyseVisitor visitor)
         {
             return visitor.Visit(this);
         }

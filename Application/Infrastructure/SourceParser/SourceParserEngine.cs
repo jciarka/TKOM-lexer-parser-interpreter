@@ -87,7 +87,7 @@ namespace Application.Infrastructure.SourceParser
             assertTypeAndAdvance(new MissingTokenException(current, TokenType.RIGHT_PAREN), TokenType.RIGHT_PAREN);
 
             // block
-            if (!tryParseBlock(out StatementBase? block) || block!.GetType() != typeof(BlockStmt))
+            if (!tryParseBlock(out IStatement? block) || block!.GetType() != typeof(BlockStmt))
             {
                 throw new InvalidStatementException(current);
             }
@@ -143,9 +143,9 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseBlock(out StatementBase? block)
+        private bool tryParseBlock(out IStatement? block)
         {
-            var statements = new List<StatementBase>();
+            var statements = new List<IStatement>();
 
             // left brace
             if (!checkType(TokenType.LEFT_BRACE))
@@ -169,7 +169,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseStatement(out StatementBase? statement)
+        private bool tryParseStatement(out IStatement? statement)
         {
             try
             {
@@ -206,7 +206,7 @@ namespace Application.Infrastructure.SourceParser
             checkTypeAndAdvance(TokenType.SEMICOLON);
         }
 
-        private bool tryParseIfStmt(out StatementBase? statement)
+        private bool tryParseIfStmt(out IStatement? statement)
         {
             if (!checkType(TokenType.IF))
             {
@@ -240,7 +240,7 @@ namespace Application.Infrastructure.SourceParser
             };
 
             // else statement 
-            StatementBase? elseStatement = null;
+            IStatement? elseStatement = null;
 
             if (checkTypeAndAdvance(TokenType.ELSE))
             {
@@ -254,7 +254,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseForeachStmt(out StatementBase? statement)
+        private bool tryParseForeachStmt(out IStatement? statement)
         {
             var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.FOREACH))
@@ -284,7 +284,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseReturnStmt(out StatementBase? statement)
+        private bool tryParseReturnStmt(out IStatement? statement)
         {
             var position = new RulePosition(current.Position!);
             if (!checkTypeAndAdvance(TokenType.RETURN))
@@ -310,7 +310,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseExpressionStmt(out StatementBase? statement)
+        private bool tryParseExpressionStmt(out IStatement? statement)
         {
             var position = new RulePosition(current.Position!);
 
@@ -331,7 +331,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseFinancialFrom(ExpressionBase expression, RulePosition position, out StatementBase? statement)
+        private bool tryParseFinancialFrom(IExpression expression, RulePosition position, out IStatement? statement)
         {
             if (!checkType(TokenType.TRANSFER_FROM, TokenType.TRANSFER_PRCT_FROM))
             {
@@ -346,7 +346,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new MissingExpressionException(current);
             }
 
-            ExpressionBase? accountToExpression = null;
+            IExpression? accountToExpression = null;
             if (checkTypeAndAdvance(TokenType.TRANSFER_FROM) && !tryParseExpression(out accountToExpression))
             {
                 throw new MissingExpressionException(current);
@@ -357,7 +357,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseFinancialTo(ExpressionBase expression, RulePosition position, out StatementBase? statement)
+        private bool tryParseFinancialTo(IExpression expression, RulePosition position, out IStatement? statement)
         {
             if (!checkType(TokenType.TRANSFER_TO, TokenType.TRANSFER_PRCT_TO))
             {
@@ -377,7 +377,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? assignmentStatement)
+        private bool tryParseAssignmentExpression(IExpression lValueExpression, RulePosition position, out IStatement? assignmentStatement)
         {
             if (!checkTypeAndAdvance(TokenType.EQUAL))
             {
@@ -395,7 +395,7 @@ namespace Application.Infrastructure.SourceParser
             throw new MissingExpressionException(current);
         }
 
-        private bool tryParseIdentifierAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
+        private bool tryParseIdentifierAssignmentExpression(IExpression lValueExpression, RulePosition position, out IStatement? statement)
         {
             if (lValueExpression.GetType() != typeof(Identifier))
             {
@@ -412,7 +412,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParsePropertyAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
+        private bool tryParsePropertyAssignmentExpression(IExpression lValueExpression, RulePosition position, out IStatement? statement)
         {
             if (lValueExpression.GetType() != typeof(ObjectPropertyExpr))
             {
@@ -429,7 +429,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseIndexAssignmentExpression(ExpressionBase lValueExpression, RulePosition position, out StatementBase? statement)
+        private bool tryParseIndexAssignmentExpression(IExpression lValueExpression, RulePosition position, out IStatement? statement)
         {
             if (lValueExpression.GetType() != typeof(ObjectIndexExpr))
             {
@@ -446,7 +446,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseDeclarationStmt(out StatementBase? statement)
+        private bool tryParseDeclarationStmt(out IStatement? statement)
         {
             if (!checkType(TokenType.VAR, TokenType.TYPE))
             {
@@ -470,7 +470,7 @@ namespace Application.Infrastructure.SourceParser
                 throw new UnknownTypeOnVariableDeclaration(typeToken);
             }
 
-            ExpressionBase? valueExpression = null;
+            IExpression? valueExpression = null;
             if (checkTypeAndAdvance(TokenType.EQUAL) && !tryParseExpression(out valueExpression))
             {
                 throw new MissingExpressionException(current);
@@ -490,7 +490,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseExpression(out ExpressionBase? expression)
+        private bool tryParseExpression(out IExpression? expression)
         {
             if (!tryParseAndExpression(out var lExpression))
             {
@@ -499,7 +499,7 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var position = new RulePosition(current.Position!);
-            var rExpressions = new List<ExpressionBase>();
+            var rExpressions = new List<IExpression>();
 
             while (checkTypeAndAdvance(TokenType.OR))
             {
@@ -520,7 +520,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseAndExpression(out ExpressionBase? expression)
+        private bool tryParseAndExpression(out IExpression? expression)
         {
             if (!tryParseComparativeExpr(out var lExpression))
             {
@@ -529,7 +529,7 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var position = new RulePosition(current.Position!);
-            var rExpressions = new List<ExpressionBase>();
+            var rExpressions = new List<IExpression>();
 
             while (checkTypeAndAdvance(TokenType.AND))
             {
@@ -550,7 +550,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseComparativeExpr(out ExpressionBase? expression)
+        private bool tryParseComparativeExpr(out IExpression? expression)
         {
             if (!tryParseAdditiveExpr(out var lExpression))
             {
@@ -559,7 +559,7 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var position = new RulePosition(current.Position!);
-            var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
+            var rExpressions = new List<Tuple<TokenType, IExpression>>();
 
             while (checkType(
                 TokenType.BANG_EQUAL,
@@ -590,7 +590,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseAdditiveExpr(out ExpressionBase? expression)
+        private bool tryParseAdditiveExpr(out IExpression? expression)
         {
             if (!tryParseMultiplicativeExpr(out var lExpression))
             {
@@ -599,7 +599,7 @@ namespace Application.Infrastructure.SourceParser
             }
 
             var position = new RulePosition(current.Position!);
-            var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
+            var rExpressions = new List<Tuple<TokenType, IExpression>>();
 
             while (checkType(TokenType.PLUS, TokenType.MINUS))
             {
@@ -624,7 +624,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseMultiplicativeExpr(out ExpressionBase? expression)
+        private bool tryParseMultiplicativeExpr(out IExpression? expression)
         {
             if (!tryParseNegatonExpr(out var lExpression))
             {
@@ -634,7 +634,7 @@ namespace Application.Infrastructure.SourceParser
 
             var position = new RulePosition(current.Position!);
 
-            var rExpressions = new List<Tuple<TokenType, ExpressionBase>>();
+            var rExpressions = new List<Tuple<TokenType, IExpression>>();
 
             while (checkType(TokenType.STAR, TokenType.SLASH))
             {
@@ -659,7 +659,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseNegatonExpr(out ExpressionBase? expression)
+        private bool tryParseNegatonExpr(out IExpression? expression)
         {
             var position = new RulePosition(current.Position!);
             if (checkType(TokenType.BANG, TokenType.MINUS))
@@ -683,7 +683,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseConversionExpr(out ExpressionBase? expression)
+        private bool tryParseConversionExpr(out IExpression? expression)
         {
             if (!tryParsePrctOfExpr(out var lExpression))
             {
@@ -708,7 +708,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParsePrctOfExpr(out ExpressionBase? expression)
+        private bool tryParsePrctOfExpr(out IExpression? expression)
         {
             if (!tryParseObjectExpr(out var lExpression))
             {
@@ -731,14 +731,14 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseObjectExpr(out ExpressionBase? expression)
+        private bool tryParseObjectExpr(out IExpression? expression)
         {
             if (!tryParseTerm(out expression))
             {
                 return false;
             }
 
-            ExpressionBase? newExpression = null;
+            IExpression? newExpression = null;
             while (tryParseObjectPrtopertyOrMethodExpression(expression!, out newExpression)
                     || tryParseObjectIndexExpression(expression!, out newExpression))
             {
@@ -748,7 +748,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseObjectPrtopertyOrMethodExpression(ExpressionBase subExpression, out ExpressionBase? newExpression)
+        private bool tryParseObjectPrtopertyOrMethodExpression(IExpression subExpression, out IExpression? newExpression)
         {
             if (!checkTypeAndAdvance(TokenType.DOT))
             {
@@ -780,7 +780,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseObjectIndexExpression(ExpressionBase subExpression, out ExpressionBase? newExpression)
+        private bool tryParseObjectIndexExpression(IExpression subExpression, out IExpression? newExpression)
         {
             if (!checkTypeAndAdvance(TokenType.LEFT_BRACKET))
             {
@@ -800,9 +800,9 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private IEnumerable<ArgumentBase> parseArguments()
+        private IEnumerable<IArgument> parseArguments()
         {
-            var arguments = new List<ArgumentBase>();
+            var arguments = new List<IArgument>();
 
             if (!tryParseArgument(out var argument))
             {
@@ -824,7 +824,7 @@ namespace Application.Infrastructure.SourceParser
             return arguments;
         }
 
-        private bool tryParseArgument(out ArgumentBase? argument)
+        private bool tryParseArgument(out IArgument? argument)
         {
             if (tryParseLambdaArgument(out argument)
                 || tryParseExpressionArgument(out argument))
@@ -835,7 +835,7 @@ namespace Application.Infrastructure.SourceParser
             return false;
         }
 
-        private bool tryParseExpressionArgument(out ArgumentBase? argument)
+        private bool tryParseExpressionArgument(out IArgument? argument)
         {
             var position = new RulePosition(current.Position!);
 
@@ -849,7 +849,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseLambdaArgument(out ArgumentBase? lambda)
+        private bool tryParseLambdaArgument(out IArgument? lambda)
         {
             if (!checkTypeAndAdvance(TokenType.LAMBDA))
             {
@@ -885,7 +885,7 @@ namespace Application.Infrastructure.SourceParser
                 _errorHandler.HandleError(new MissingTokenException(current, TokenType.ARROW));
             }
 
-            if (tryParseBlock(out StatementBase? block))
+            if (tryParseBlock(out IStatement? block))
             {
                 lambda = new Lambda(parameter, block!, position);
             }
@@ -904,7 +904,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseTerm(out ExpressionBase? expression)
+        private bool tryParseTerm(out IExpression? expression)
         {
             if (tryParseParentisedExpression(out expression))
             {
@@ -927,7 +927,7 @@ namespace Application.Infrastructure.SourceParser
             return false;
         }
 
-        private bool tryParseParentisedExpression(out ExpressionBase? term)
+        private bool tryParseParentisedExpression(out IExpression? term)
         {
             if (!checkTypeAndAdvance(TokenType.LEFT_PAREN))
             {
@@ -951,7 +951,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseIdentifierOrFunctionCall(out ExpressionBase? term)
+        private bool tryParseIdentifierOrFunctionCall(out IExpression? term)
         {
             if (!checkType(TokenType.IDENTIFIER))
             {
@@ -979,7 +979,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseLiteral(out ExpressionBase? term)
+        private bool tryParseLiteral(out IExpression? term)
         {
             if (!checkType(TokenType.LITERAL))
             {
@@ -1002,7 +1002,7 @@ namespace Application.Infrastructure.SourceParser
             return true;
         }
 
-        private bool tryParseTypeOrConstructor(out ExpressionBase? term)
+        private bool tryParseTypeOrConstructor(out IExpression? term)
         {
             if (!checkType(TokenType.TYPE))
             {
