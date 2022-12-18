@@ -9,355 +9,393 @@ using System.Threading.Tasks;
 
 namespace Application.Infrastructure.Presenters
 {
-    public class GrammarPresenter : IPresenterVisitor
+    public class GrammarPresenter : IVisitor
     {
-        // private int _depth;
+        private int depth;
 
-        public void Visit(ProgramRoot node, int depth = 0)
+        public void Visit(ProgramRoot node)
         {
-            // _depth = 0;
+            depth = 0;
 
-            write(depth, "PROGRAM");
+            write("PROGRAM");
 
             foreach (var function in node.FunctionDeclarations)
             {
-                function.Accept(this, depth + 1);
+                accept(function);
             }
         }
 
-        public void Visit(FunctionDecl functionDecl, int depth)
+        public void Visit(FunctionDecl functionDecl)
         {
-            write(depth, $"FUNCTION {functionDecl.Name}");
+            write($"FUNCTION {functionDecl.Name}");
 
+            push();
             if (functionDecl.Type != null)
             {
-                write(depth + 1, $"RETURN TYPE");
-                functionDecl.Type!.Accept(this, depth + 2);
+                write($"RETURN TYPE");
+                accept(functionDecl.Type);
             }
             else
             {
-                write(depth + 1, $"RETURN TYPE is VOID");
+                write($"RETURN TYPE is VOID");
             }
 
             foreach (var param in functionDecl.Parameters)
             {
-                param.Accept(this, depth + 1);
+                param.Accept(this);
             }
 
-            functionDecl.Block.Accept(this, depth + 1);
+            accept(functionDecl.Block);
+
+            pop();
         }
 
-        public void Visit(BlockStmt node, int depth)
+        public void Visit(BlockStmt node)
         {
-            write(depth, $"BLOCK");
+            write($"BLOCK");
 
             foreach (var statement in node.Statements)
             {
-                statement.Accept(this, depth + 1);
+                accept(statement);
             }
         }
 
-        public void Visit(IdentifierAssignmentStatement node, int depth)
+        public void Visit(IdentifierAssignmentStatement node)
         {
-            write(depth, $"IDENT ASSIGN: {node.Identifier.Name}");
-            node.Expression.Accept(this, depth + 1);
+            write($"IDENT ASSIGN: {node.Identifier.Name}");
+            accept(node.Expression);
         }
 
-        public void Visit(PropertyAssignmentStatement node, int depth)
+        public void Visit(PropertyAssignmentStatement node)
         {
-            write(depth, $"PROP ASSIGN");
-            write(depth + 1, $"PROPERTY");
-            node.Property.Accept(this, depth + 1);
-            write(depth + 1, $"VALUE");
-            node.Expression.Accept(this, depth + 1);
+            write($"PROP ASSIGN");
+
+            push();
+            write($"PROPERTY");
+            accept(node.Property);
+            write($"VALUE");
+            accept(node.Expression);
+            pop();
         }
 
-        public void Visit(IndexAssignmentStatement node, int depth)
+        public void Visit(IndexAssignmentStatement node)
         {
-            write(depth, $"INDEX ASSIGN");
-            write(depth + 1, $"OBJECT[INDEX]");
-            node.IndexExpr.Accept(this, depth + 1);
-            write(depth + 1, $"VALUE");
-            node.Expression.Accept(this, depth + 1);
+            write($"INDEX ASSIGN");
+            push();
+            write($"OBJECT[INDEX]");
+            accept(node.IndexExpr);
+            write($"VALUE");
+            accept(node.Expression);
+            pop();
         }
 
-        public void Visit(DeclarationStmt node, int depth)
+        public void Visit(DeclarationStmt node)
         {
-            write(depth, $"DECLARATION {node.Identifier.Name}");
+            write($"DECLARATION {node.Identifier.Name}");
 
+            push();
             if (node.Type != null)
             {
-                write(depth + 1, $"DECLARATION TYPE");
-                node.Type!.Accept(this, depth + 2);
+                write($"DECLARATION TYPE");
+                accept(node.Type!);
             }
             else
             {
-                write(depth + 1, $"DECLARATION TYPE is VAR");
+                write($"DECLARATION TYPE is VAR");
             }
 
             if (node.Expression != null)
             {
-                write(depth + 1, $"DECLARATION EXPRESSION");
-                node.Expression!.Accept(this, depth + 2);
+                write($"DECLARATION EXPRESSION");
+                accept(node.Expression!);
             }
+            pop();
         }
 
-        public void Visit(ReturnStmt node, int depth)
+        public void Visit(ReturnStmt node)
         {
-            write(depth, $"RETURN");
+            write($"RETURN");
 
             if (node.ReturnExpression != null)
             {
-                node.ReturnExpression.Accept(this, depth + 1);
+                accept(node.ReturnExpression);
             }
             else
             {
-                write(depth + 1, $"RETURN VOID");
+                push();
+                write($"RETURN VOID");
+                pop();
             }
         }
 
-        public void Visit(WhileStmt node, int depth)
+        public void Visit(WhileStmt node)
         {
-            write(depth, $"WHILE CONDITION");
-            node.Condition.Accept(this, depth + 1);
+            write($"WHILE CONDITION");
+            accept(node.Condition);
 
-            write(depth, $"WHILE STATEMENT");
-            node.Statement.Accept(this, depth + 1);
+            write($"WHILE STATEMENT");
+            accept(node.Statement);
         }
 
-        public void Visit(IfStmt node, int depth)
+        public void Visit(IfStmt node)
         {
-            write(depth, $"IF");
-            node.Condition.Accept(this, depth + 1);
+            write($"IF");
+            accept(node.Condition);
 
-            write(depth, $"THEN");
-            node.ThenStatement.Accept(this, depth + 1);
+            write($"THEN");
+            accept(node.ThenStatement);
 
             if (node.ElseStatement != null)
             {
-                write(depth, $"ELSE");
-                node.Accept(this, depth + 1);
+                write($"ELSE");
+                accept(node.ElseStatement);
             }
         }
 
-        public void Visit(ForeachStmt node, int depth)
+        public void Visit(ForeachStmt node)
         {
-            write(depth, $"FOREACH");
-            write(depth + 1, $"FOREACH PARAMETER");
-            node.Parameter.Accept(this, depth + 2);
+            write($"FOREACH");
 
-            write(depth + 1, $"FOREACH COLLECTION");
-            node.CollectionExpression.Accept(this, depth + 2);
+            push();
+            write($"FOREACH PARAMETER");
+            accept(node.Parameter);
 
-            write(depth + 1, $"FOREACH STATEMENT");
-            node.Statement.Accept(this, depth + 2);
+            write($"FOREACH COLLECTION");
+            accept(node.CollectionExpression);
+
+            write($"FOREACH STATEMENT");
+            accept(node.Statement);
+            pop();
         }
 
-        public void Visit(FinancialToStmt node, int depth)
+        public void Visit(FinancialToStmt node)
         {
-            write(depth, $"FINANCIAL TO  {node.Operator.ToString()}");
-            node.AccountExpression.Accept(this, depth + 1);
+            write($"FINANCIAL TO  {node.Operator.ToString()}");
+            accept(node.AccountExpression);
 
-            write(depth + 1, $"FINANCIAL TO  VALUE");
-            node.ValueExpression.Accept(this, depth + 1);
+            write($"FINANCIAL TO  VALUE");
+            accept(node.ValueExpression);
         }
 
-        public void Visit(FinancialFromStmt node, int depth)
+        public void Visit(FinancialFromStmt node)
         {
-            write(depth, $"FINANCIAL FROM {node.Operator.ToString()}");
-            node.AccountFromExpression.Accept(this, depth + 1);
+            write($"FINANCIAL FROM {node.Operator.ToString()}");
+            accept(node.AccountFromExpression);
 
-            write(depth + 1, $"FINANCIAL FROM VALUE");
-            node.ValueExpression.Accept(this, depth + 1);
+            push();
+            write($"FINANCIAL FROM VALUE");
+            accept(node.ValueExpression);
 
             if (node.AccountToExpression != null)
             {
-                write(depth + 1, $"FINANCIAL FROM TO ACCOUNT");
-                node.AccountToExpression.Accept(this, depth + 1);
+                write($"FINANCIAL FROM TO ACCOUNT");
+                accept(node.AccountToExpression);
             }
+            pop();
         }
 
-        public void Visit(Parameter node, int depth)
+        public void Visit(Parameter node)
         {
-            write(depth, $"PARAMETER {node.Identifier}");
-            write(depth + 1, $"PARAMETER TYPE");
-            node.Type.Accept(this, depth + 2);
+            write($"PARAMETER {node.Identifier}");
+            push();
+            write($"PARAMETER TYPE");
+            accept(node.Type);
+            pop();
         }
 
-        public void Visit(Lambda node, int depth)
+        public void Visit(Lambda node)
         {
-            write(depth, $"LAMBDA");
-            node.Parameter.Accept(this, depth + 1);
-            node.Stmt.Accept(this, depth + 1);
+            write($"LAMBDA");
+            accept(node.Parameter);
+            accept(node.Stmt);
         }
 
-        public void Visit(Identifier node, int depth)
+        public void Visit(Identifier node)
         {
-            write(depth, $"IDENTIFIER {node.Name}");
+            write($"IDENTIFIER {node.Name}");
         }
 
-        public void Visit(ExpressionArgument node, int depth)
+        public void Visit(ExpressionArgument node)
         {
-            write(depth, $"ARGUMENT");
-            node.Expression.Accept(this, depth + 1);
+            write($"ARGUMENT");
+            accept(node.Expression);
         }
 
-        public void Visit(ExpressionStmt node, int depth)
+        public void Visit(ExpressionStmt node)
         {
-            write(depth, $"EXPRESSSION STATEMET");
-            node.RightExpression.Accept(this, depth + 1);
+            write($"EXPRESSSION STATEMET");
+            accept(node.RightExpression);
         }
 
-        public void Visit(AndExpr node, int depth)
+        public void Visit(AndExpr node)
         {
-            write(depth, $"AND");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"AND");
+            accept(node.FirstOperand);
 
             foreach (var item in node.Operands)
             {
-                item.Accept(this, depth + 1);
+                accept(item);
             }
         }
 
-        public void Visit(OrExpr node, int depth)
+        public void Visit(OrExpr node)
         {
-            write(depth, $"OR");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"OR");
+            accept(node.FirstOperand);
 
             foreach (var item in node.Operands)
             {
-                item.Accept(this, depth + 1);
+                accept(item);
             }
         }
 
-        public void Visit(AdditiveExpr node, int depth)
+        public void Visit(AdditiveExpr node)
         {
-            write(depth, $"ADD");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"ADD");
+            accept(node.FirstOperand);
 
+            push();
             foreach (var item in node.Operands)
             {
-                write(depth + 1, $"{item.Item1}");
-                item.Item2.Accept(this, depth + 1);
+                write($"{item.Item1}");
+                accept(item.Item2);
             }
+            pop();
         }
 
-        public void Visit(MultiplicativeExpr node, int depth)
+        public void Visit(MultiplicativeExpr node)
         {
-            write(depth, $"MUL");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"MUL");
+            accept(node.FirstOperand);
 
+            push();
             foreach (var item in node.Operands)
             {
-                write(depth + 1, $"{item.Item1}");
-                item.Item2.Accept(this, depth + 1);
+                write($"{item.Item1}");
+                accept(item.Item2);
             }
+            pop();
         }
 
-        public void Visit(NegativeExpr node, int depth)
+        public void Visit(NegativeExpr node)
         {
-            write(depth, $"NEG {node.Operator.ToString()}");
-            node.Operand.Accept(this, depth + 1);
+            write($"NEG {node.Operator}");
+            accept(node.Operand);
         }
 
-        public void Visit(ConversionExpr node, int depth)
+        public void Visit(ConversionExpr node)
         {
-            write(depth, $"CONVERSION");
-            node.OryginalExpression.Accept(this, depth + 1);
+            write($"CONVERSION");
+            accept(node.OryginalExpression);
 
-            write(depth + 1, $"TO");
-            node.TypeExpression.Accept(this, depth + 1);
+            push();
+            write($"TO");
+            accept(node.TypeExpression);
+            pop();
         }
 
 
-        public void Visit(FunctionCallExpr node, int depth)
+        public void Visit(FunctionCallExpr node)
         {
-            write(depth, $"FUNCTION CALL {node.Name}");
+            write($"FUNCTION CALL {node.Name}");
 
             foreach (var item in node.Arguments)
             {
-                item.Accept(this, depth + 1);
+                accept(item);
             }
         }
 
-        public void Visit(ComparativeExpr node, int depth)
+        public void Visit(ComparativeExpr node)
         {
-            write(depth, $"COMPARE");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"COMPARE");
+            accept(node.FirstOperand);
 
+            push();
             foreach (var item in node.Operands)
             {
-                write(depth + 1, $"{item.Item1}");
-                item.Item2.Accept(this, depth + 1);
+                write($"{item.Item1}");
+                accept(item.Item2);
             }
+            pop();
         }
 
-        public void Visit(PrctOfExpr node, int depth)
+        public void Visit(PrctOfExpr node)
         {
-            write(depth, $"PRCT");
-            node.FirstOperand.Accept(this, depth + 1);
+            write($"PRCT");
+            node.FirstOperand.Accept(this);
 
-            write(depth + 1, $"OF");
-            node.SecondOperand.Accept(this, depth + 1);
+            push();
+            write($"OF");
+            accept(node.SecondOperand);
+            pop();
         }
 
-        public void Visit(ConstructiorCallExpr node, int depth)
+        public void Visit(ConstructiorCallExpr node)
         {
-            write(depth, $"CONSTRUCTOR");
-            write(depth + 1, $"CONSTRUCTOR TYPE");
-            node.Type.Accept(this, depth + 2);
+            write($"CONSTRUCTOR");
 
+            push();
+            write($"CONSTRUCTOR TYPE");
+            accept(node.Type);
             foreach (var item in node.Arguments)
             {
-                item.Accept(this, depth + 1);
+                accept(item);
             }
+            pop();
         }
 
-        public void Visit(ObjectPropertyExpr node, int depth)
+        public void Visit(ObjectPropertyExpr node)
         {
-            write(depth, $"PROPERTY {node.Property} OF");
-            node.Object.Accept(this, depth + 1);
+            write($"PROPERTY {node.Property} OF");
+            node.Object.Accept(this);
         }
 
-        public void Visit(ObjectIndexExpr node, int depth)
+        public void Visit(ObjectIndexExpr node)
         {
-            write(depth, $"INDEX OF");
-            node.Object.Accept(this, depth + 1);
+            write($"INDEX OF");
+            node.Object.Accept(this);
 
-            write(depth + 1, $"INDEX EXPR");
-            node.IndexExpression.Accept(this, depth + 1);
+            push();
+            write($"INDEX EXPR");
+            accept(node.IndexExpression);
+            pop();
         }
 
-        public void Visit(ObjectMethodExpr node, int depth)
+        public void Visit(ObjectMethodExpr node)
         {
-            write(depth, $"METHOD {node.Method} OF");
-            node.Object.Accept(this, depth + 1);
+            write($"METHOD {node.Method} OF");
+            accept(node.Object);
 
+            push();
             foreach (var item in node.Arguments)
             {
-                write(depth, "ARGUMENT");
-                item.Accept(this, depth + 1);
+                write("ARGUMENT");
+                accept(item);
             }
+            pop();
         }
 
-        public void Visit(BracedExprTerm node, int depth)
+        public void Visit(BracedExprTerm node)
         {
-            write(depth, $"BRACED");
-            node.Expression.Accept(this, depth + 1);
+            write($"BRACED");
+            accept(node.Expression);
         }
 
-        public void Visit(Literal node, int depth)
+        public void Visit(Literal node)
         {
-            write(depth, $"LITERAL");
+            write($"LITERAL");
+
+            push();
             if (node.Type.Type == TypeEnum.TYPE)
             {
-                write(depth + 1, $"LITERAL TYPE");
-                node.ValueType!.Accept(this, depth + 2);
+                write($"LITERAL TYPE");
+                accept(node.ValueType!);
             }
             else
             {
-                write(depth + 1, $"LITERAL VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
+                write($"LITERAL VALUE {(Object)node.BoolValue! ?? (Object)node.IntValue! ?? (Object)node.StringValue! ?? (Object)node.DecimalValue!}");
             }
+            pop();
         }
 
         private static void writeIndentation(int depth)
@@ -365,31 +403,48 @@ namespace Application.Infrastructure.Presenters
             Console.Write(Enumerable.Repeat(' ', depth).ToArray());
         }
 
-        private void write(int depth, string text)
+        private void write(string text)
         {
             writeIndentation(depth);
             Console.WriteLine(text);
         }
 
-        public void Visit(BasicType type, int depth)
+        public void Visit(BasicType type)
         {
-            write(depth, $"Type {type.Name} ({type.Type})");
+            write($"Type {type.Name} ({type.Type})");
         }
 
-        public void Visit(GenericType type, int depth)
+        public void Visit(GenericType type)
         {
-            write(depth, $"Type of {type.Name} ({type.Type}) parametrised by");
-            type.ParametrisingType.Accept(this, depth + 1);
+            write($"Type of {type.Name} ({type.Type}) parametrised by");
+            type.ParametrisingType.Accept(this);
         }
 
-        public void Visit(TypeType type, int depth)
+        public void Visit(TypeType type)
         {
-            write(depth, $"Type of {type.Name} ({type.Type}) representing ({type.OfType}) parametrised by");
+            write($"Type of {type.Name} ({type.Type}) representing ({type.OfType}) parametrised by");
         }
 
-        public void Visit(NoneType type, int depth)
+        public void Visit(NoneType type)
         {
-            write(depth, $"Type of EMPTY");
+            write($"Type of EMPTY");
+        }
+
+        public void push()
+        {
+            depth++;
+        }
+
+        public void pop()
+        {
+            depth--;
+        }
+
+        public void accept(IVisitable visitable)
+        {
+            push();
+            visitable.Accept(this);
+            pop();
         }
     }
 }

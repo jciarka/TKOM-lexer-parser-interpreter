@@ -17,14 +17,9 @@ namespace Application.Models.Grammar
             ReturnExpression = returnExpression;
         }
 
-        public void Accept(IPresenterVisitor visitor, int v)
+        public void Accept(IVisitor visitor)
         {
-            visitor.Visit(this, v);
-        }
-
-        public TypeBase Accept(ITypingAnalyseVisitor visitor)
-        {
-            return visitor.Visit(this);
+            visitor.Visit(this);
         }
     }
 }

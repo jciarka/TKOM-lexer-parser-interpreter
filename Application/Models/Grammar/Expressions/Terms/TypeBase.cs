@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar.Expressions.Terms
 {
-    public abstract class TypeBase
+    public abstract class TypeBase : IVisitable
     {
         public string Name { get; }
         public TypeEnum Type { get; }
@@ -19,7 +19,7 @@ namespace Application.Models.Grammar.Expressions.Terms
             Type = type;
         }
 
-        public abstract void Accept(IPresenterVisitor visitor, int v);
+        public abstract void Accept(IVisitor visitor);
 
         public override bool Equals(object? obj)
         {

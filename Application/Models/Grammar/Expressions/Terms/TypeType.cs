@@ -17,9 +17,9 @@ namespace Application.Models.Grammar.Expressions.Terms
             OfType = ofType;
         }
 
-        public override void Accept(IPresenterVisitor visitor, int v)
+        public override void Accept(IVisitor visitor)
         {
-            visitor.Visit(this, v);
+            visitor.Visit(this);
         }
     }
 }

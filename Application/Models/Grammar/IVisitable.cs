@@ -10,7 +10,6 @@ namespace Application.Models.Grammar
 {
     public interface IVisitable
     {
-        public void Accept(IPresenterVisitor visitor, int v);
-        public TypeBase Accept(ITypingAnalyseVisitor visitor);
+        public void Accept(IVisitor visitor);
     }
 }

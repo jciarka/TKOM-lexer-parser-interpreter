@@ -11,21 +11,23 @@ using System.Linq;
 
 namespace Application.Infrastructure.Presenters
 {
-    public class TypingAnalyser : ITypingAnalyseVisitor
+    public class TypingAnalyser : IVisitor
     {
         private readonly IErrorHandler _errorHandler;
         private readonly TypingAnalyserOptions _options;
 
         private IEnumerable<FunctionDecl> _allDeclarations = new List<FunctionDecl>();
         private FunctionCallTypeAnalyseContext? _context;
+        private Stack<TypeBase> _stack;
 
         public TypingAnalyser(IErrorHandler errorHandler, TypingAnalyserOptions? options = null)
         {
             _errorHandler = errorHandler;
             _options = options ?? new TypingAnalyserOptions();
+            _stack = new Stack<TypeBase>();
         }
 
-        public TypeBase Visit(ProgramRoot node)
+        public void Visit(ProgramRoot node)
         {
             _allDeclarations = node.FunctionDeclarations;
 
@@ -33,7 +35,7 @@ namespace Application.Infrastructure.Presenters
             {
                 try
                 {
-                    function.Accept(this);
+                    accept(function);
                 }
                 catch (ComputingException issue)
                 {
@@ -41,10 +43,10 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(FunctionDecl node)
+        public void Visit(FunctionDecl node)
         {
             var parsedFunctions = _allDeclarations
                 .ToDictionary(x => (FunctionSignature)new FixedArgumentsFunctionSignature(x), x => x.Type);
@@ -61,12 +63,12 @@ namespace Application.Infrastructure.Presenters
 
             _context = new FunctionCallTypeAnalyseContext(node, new CallableAnalyseSet(functions), new ClassAnalyseSet(prototypes));
 
-            node.Block.Accept(this);
+            accept(node.Block);
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(BlockStmt node)
+        public void Visit(BlockStmt node)
         {
             try
             {
@@ -86,39 +88,39 @@ namespace Application.Infrastructure.Presenters
                 _context!.PopScope();
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(IdentifierAssignmentStatement node)
+        public void Visit(IdentifierAssignmentStatement node)
         {
             if (!_context!.Scope.TryFind(node.Identifier.Name, out var variableType))
             {
                 _errorHandler.HandleError(new NotDefinedVariableException(node.Identifier.Name));
             }
 
-            var expressionType = node.Expression.Accept(this);
+            var expressionType = accept(node.Expression);
 
             if (variableType != expressionType)
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, variableType!.Type));
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(PropertyAssignmentStatement propertyAssignmentStatement)
+        public void Visit(PropertyAssignmentStatement propertyAssignmentStatement)
         {
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(IndexAssignmentStatement indexAssignmentStatement)
+        public void Visit(IndexAssignmentStatement indexAssignmentStatement)
         {
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(DeclarationStmt node)
+        public void Visit(DeclarationStmt node)
         {
-            var expressionType = node.Expression != null ? node.Expression.Accept(this) : null;
+            var expressionType = node.Expression != null ? accept(node.Expression) : null;
 
             if (expressionType == null && node.Type == null)
             {
@@ -138,12 +140,12 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler.HandleError(new VariableRedefiniitionException(node.Identifier.Name, node.Position));
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(ReturnStmt node)
+        public void Visit(ReturnStmt node)
         {
-            var returnExpressionType = node.ReturnExpression != null ? node.ReturnExpression.Accept(this) : new NoneType();
+            var returnExpressionType = node.ReturnExpression != null ? accept(node.ReturnExpression) : new NoneType();
 
             if (!_context!.CheckReturnType(returnExpressionType))
             {
@@ -157,12 +159,12 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return returnExpressionType;
+            push(returnExpressionType);
         }
 
-        public TypeBase Visit(WhileStmt node)
+        public void Visit(WhileStmt node)
         {
-            var conditionType = node.Condition.Accept(this);
+            var conditionType = accept(node.Condition);
 
             if (!checkType(conditionType, TypeEnum.BOOL))
             {
@@ -171,12 +173,12 @@ namespace Application.Infrastructure.Presenters
 
             node.Statement.Accept(this);
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(IfStmt node)
+        public void Visit(IfStmt node)
         {
-            var conditionType = node.Condition.Accept(this);
+            var conditionType = accept(node.Condition);
 
             if (!checkType(conditionType, TypeEnum.BOOL))
             {
@@ -190,12 +192,12 @@ namespace Application.Infrastructure.Presenters
                 node.ElseStatement.Accept(this);
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(ForeachStmt node)
+        public void Visit(ForeachStmt node)
         {
-            var collectionType = node.CollectionExpression.Accept(this);
+            var collectionType = accept(node.CollectionExpression);
 
             if (collectionType!.GetType() != typeof(GenericType))
             {
@@ -211,19 +213,19 @@ namespace Application.Infrastructure.Presenters
 
             node.Statement.Accept(this);
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(FinancialToStmt node)
+        public void Visit(FinancialToStmt node)
         {
-            var accountExpression = node.AccountExpression.Accept(this);
+            var accountExpression = accept(node.AccountExpression);
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
                 _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.ACCOUNT));
             }
 
-            var valueExpression = node.ValueExpression.Accept(this);
+            var valueExpression = accept(node.ValueExpression);
 
             if (node.Operator == TokenType.TRANSFER_TO)
             {
@@ -240,19 +242,19 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(FinancialFromStmt node)
+        public void Visit(FinancialFromStmt node)
         {
-            var accountExpression = node.AccountFromExpression.Accept(this);
+            var accountExpression = accept(node.AccountFromExpression);
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
                 _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.ACCOUNT));
             }
 
-            var valueExpression = node.ValueExpression.Accept(this);
+            var valueExpression = accept(node.ValueExpression);
 
             if (node.Operator == TokenType.TRANSFER_FROM)
             {
@@ -271,7 +273,7 @@ namespace Application.Infrastructure.Presenters
 
             if (node.AccountToExpression != null)
             {
-                var accountToExpression = node.AccountToExpression.Accept(this);
+                var accountToExpression = accept(node.AccountToExpression);
 
                 if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
                 {
@@ -279,23 +281,25 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(Parameter parameter)
+        public void Visit(Parameter parameter)
         {
-            return parameter.Type;
+            push(parameter.Type);
         }
 
-        public TypeBase Visit(Lambda lambda)
+        public void Visit(Lambda lambda)
         {
             if (lambda.Stmt.GetType() == typeof(ExpressionStmt))
             {
-                return visitExpressionLambda(lambda);
+                push(visitExpressionLambda(lambda));
+                return;
             }
             else
             {
-                return visitBlockLambda(lambda);
+                push(visitBlockLambda(lambda));
+                return;
             }
         }
 
@@ -329,7 +333,7 @@ namespace Application.Infrastructure.Presenters
             {
                 _context!.PushScope();
                 _context.Scope.TryAdd(lambda.Parameter.Identifier, lambda.Parameter.Type);
-                type = lambda.Stmt.Accept(this);
+                type = accept(lambda.Stmt);
             }
             catch (ComputingException issue)
             {
@@ -343,34 +347,34 @@ namespace Application.Infrastructure.Presenters
             return new GenericType(TypeName.LAMBDA, type);
         }
 
-        public TypeBase Visit(Identifier identifier)
+        public void Visit(Identifier identifier)
         {
             if (!_context!.Scope.TryFind(identifier.Name, out var variableType))
             {
                 throw new NotDefinedVariableException(identifier.Name);
             }
 
-            return variableType!;
+            push(variableType!);
         }
 
-        public TypeBase Visit(ExpressionArgument expressionArgument)
+        public void Visit(ExpressionArgument expressionArgument)
         {
-            return expressionArgument.Expression.Accept(this);
+            push(accept(expressionArgument.Expression));
         }
 
-        public TypeBase Visit(ExpressionStmt expressionStmt)
+        public void Visit(ExpressionStmt expressionStmt)
         {
-            return expressionStmt.RightExpression.Accept(this);
+            push(accept(expressionStmt.RightExpression));
         }
 
-        public TypeBase Visit(OrExpr node)
+        public void Visit(OrExpr node)
         {
-            return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
+            push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
         }
 
-        public TypeBase Visit(AdditiveExpr node)
+        public void Visit(AdditiveExpr node)
         {
-            var first = node.FirstOperand.Accept(this);
+            var first = accept(node.FirstOperand);
 
             if (!checkType(first, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY))
             {
@@ -379,7 +383,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var operand in node.Operands)
             {
-                var next = operand.Item2.Accept(this);
+                var next = accept(operand.Item2);
 
                 if (first!.Name != next?.Name)
                 {
@@ -387,12 +391,12 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return first;
+            push(first);
         }
 
-        public TypeBase Visit(MultiplicativeExpr node)
+        public void Visit(MultiplicativeExpr node)
         {
-            var first = node.FirstOperand.Accept(this);
+            var first = accept(node.FirstOperand);
 
             if (!checkType(first, TypeEnum.INT, TypeEnum.DECIMAL))
             {
@@ -401,7 +405,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var operand in node.Operands)
             {
-                var next = operand.Item2.Accept(this);
+                var next = accept(operand.Item2);
 
                 if (first!.Type != next?.Type)
                 {
@@ -409,59 +413,62 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return first;
+            push(first);
         }
 
-        public TypeBase Visit(NegativeExpr node)
+        public void Visit(NegativeExpr node)
         {
-            var first = node.Operand.Accept(this);
+            var first = accept(node.Operand);
 
             if (node.Operator == TokenType.MINUS)
             {
                 if (checkType(first, TypeEnum.INT, TypeEnum.DECIMAL))
                 {
-                    return first;
+                    push(first);
+                    return;
                 }
 
                 _errorHandler.HandleError(new InvalidTypeException(first, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
 
-                return new BasicType(TypeName.INT, TypeEnum.INT);
+                push(new BasicType(TypeName.INT, TypeEnum.INT));
             }
 
             if (node.Operator == TokenType.BANG)
             {
                 if (checkType(first, TypeEnum.BOOL))
                 {
-                    return first;
+                    push(first);
+                    return;
                 }
 
                 _errorHandler.HandleError(new InvalidTypeException(first, node.Position, TypeEnum.BOOL));
-                return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
+                push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
+                return;
             }
 
-            return new NoneType();
+            push(new NoneType());
         }
 
-        public TypeBase Visit(ConversionExpr node)
+        public void Visit(ConversionExpr node)
         {
-            var next = node.TypeExpression.Accept(this);
+            var next = accept(node.TypeExpression);
 
             if (!checkType(next, TypeEnum.TYPE))
             {
                 _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.TYPE));
             }
 
-            return ((TypeType)next!).OfType;
+            push(((TypeType)next!).OfType);
         }
 
-        public TypeBase Visit(AndExpr andExpr)
+        public void Visit(AndExpr andExpr)
         {
-            return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
+            push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
         }
 
-        public TypeBase Visit(FunctionCallExpr node)
+        public void Visit(FunctionCallExpr node)
         {
-            var argumentTypes = node.Arguments.Select(x => x.Accept(this));
+            var argumentTypes = node.Arguments.Select(x => accept(x));
             var callDescription = new FunctionCallExprDescription(node.Name, argumentTypes);
 
             if (!_context!.CallableSet.TryFind(callDescription, out var returnType))
@@ -469,12 +476,12 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler?.HandleError(new FunctionNotDeclaredException(callDescription, node.Position));
             }
 
-            return returnType!;
+            push(returnType!);
         }
 
-        public TypeBase Visit(ComparativeExpr node)
+        public void Visit(ComparativeExpr node)
         {
-            var first = node.FirstOperand.Accept(this);
+            var first = accept(node.FirstOperand);
 
             if (first?.Type == null)
             {
@@ -483,7 +490,7 @@ namespace Application.Infrastructure.Presenters
 
             foreach (var operand in node.Operands)
             {
-                var next = operand.Item2.Accept(this);
+                var next = accept(operand.Item2);
 
                 if (first!.Type != next?.Type)
                 {
@@ -491,68 +498,68 @@ namespace Application.Infrastructure.Presenters
                 }
             }
 
-            return new BasicType(TypeName.BOOL, TypeEnum.BOOL);
+            push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
         }
 
-        public TypeBase Visit(PrctOfExpr node)
+        public void Visit(PrctOfExpr node)
         {
-            var accountExpression = node.FirstOperand.Accept(this);
+            var accountExpression = accept(node.FirstOperand);
 
             if (!accountExpression.Name.Equals(TypeName.ACCOUNT))
             {
                 _errorHandler.HandleError(new InvalidTypeException(accountExpression, node.Position, TypeEnum.GENERIC));
             }
 
-            var prctExpression = node.SecondOperand.Accept(this);
+            var prctExpression = accept(node.SecondOperand);
 
             if (!checkType(prctExpression, TypeEnum.INT, TypeEnum.DECIMAL))
             {
                 _errorHandler.HandleError(new InvalidTypeException(prctExpression, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
             }
 
-            return new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL);
+            push(new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL));
         }
 
-        public TypeBase Visit(ConstructiorCallExpr node)
+        public void Visit(ConstructiorCallExpr node)
         {
-            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
+            var parameterTypes = node.Arguments.Select(x => accept(x));
 
             if (!_context!.ClassSet.TryFindConstructor(node.Type, parameterTypes))
             {
                 _errorHandler?.HandleError(new ClassNotDeclaredException(node.Type.Name, node.Position));
             }
 
-            return node.Type;
+            push(node.Type);
         }
 
-        public TypeBase Visit(ObjectPropertyExpr node)
+        public void Visit(ObjectPropertyExpr node)
         {
-            var objectType = node.Object.Accept(this);
+            var objectType = accept(node.Object);
 
             if (!_context!.ClassSet.TryFindProperty(objectType, node.Property, out var propertyType))
             {
                 _errorHandler?.HandleError(new PropertyNotDeclaredException(objectType.Name, node.Property, node.Position));
             }
 
-            return propertyType!;
+            push(propertyType!);
         }
 
-        public TypeBase Visit(ObjectIndexExpr node)
+        public void Visit(ObjectIndexExpr node)
         {
-            var objectType = node.Object.Accept(this);
+            var objectType = accept(node.Object);
 
             if (!objectType.Name.Equals(TypeName.COLLECTION))
             {
                 _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
             }
 
-            return (objectType as GenericType)!.ParametrisingType;
+            push((objectType as GenericType)!.ParametrisingType);
         }
 
-        public TypeBase Visit(ObjectMethodExpr node)
+        public void Visit(ObjectMethodExpr node)
         {
-            var objectType = node.Object.Accept(this);
-            var parameterTypes = node.Arguments.Select(x => x.Accept(this));
+            var objectType = accept(node.Object);
+            var parameterTypes = node.Arguments.Select(x => accept(x));
 
             if (!_context!.ClassSet.TryFindMethod(
                 objectType, new FunctionCallExprDescription(node.Method, parameterTypes), out var returnType))
@@ -560,32 +567,32 @@ namespace Application.Infrastructure.Presenters
                 _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
             }
 
-            return returnType!;
+            push(returnType!);
         }
 
-        public TypeBase Visit(BracedExprTerm node)
+        public void Visit(BracedExprTerm node)
         {
-            return node.Expression.Accept(this);
+            push(accept(node.Expression));
         }
 
-        public TypeBase Visit(Literal node)
+        public void Visit(Literal node)
         {
-            return node.Type;
+            push(node.Type);
         }
 
-        public TypeBase Visit(BasicType node)
+        public void Visit(BasicType node)
         {
-            return new TypeType(node);
+            push(new TypeType(node));
         }
 
-        public TypeBase Visit(GenericType node)
+        public void Visit(GenericType node)
         {
-            return new TypeType(node);
+            push(new TypeType(node));
         }
 
-        public TypeBase Visit(TypeType node)
+        public void Visit(TypeType node)
         {
-            return node;
+            push(node);
         }
 
         public bool checkType(TypeBase type, params TypeEnum[] types)
@@ -596,6 +603,22 @@ namespace Application.Infrastructure.Presenters
             }
 
             return types.Any(t => type?.Type == t);
+        }
+
+        public void push(TypeBase type)
+        {
+            _stack.Push(type);
+        }
+
+        public TypeBase accept(IVisitable node)
+        {
+            node.Accept(this);
+            return _stack.Pop();
+        }
+
+        public void Visit(NoneType noneType)
+        {
+            throw new NotImplementedException();
         }
     }
 }
