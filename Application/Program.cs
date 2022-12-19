@@ -14,5 +14,6 @@ using System.Reflection;
 //LexerTestScenarios.ExampleWithSourceOkAndCommentFilter_File();
 //LexerTestScenarios.ExampleWithSourceOk_String();
 
-ParserTestScenarios.Example2();
+ParserTestScenarios.ParserExampleNoIssues();
+//ParserTestScenarios.ParserExampleWithTypeIssues();
 

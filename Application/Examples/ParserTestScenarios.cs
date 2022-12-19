@@ -16,7 +16,7 @@ namespace Application.Examples
 {
     public static class ParserTestScenarios
     {
-        public static void Example1()
+        public static void ParserExampleNoIssues()
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd.txt");
 
@@ -43,7 +43,7 @@ namespace Application.Examples
             }
         }
 
-        public static void Example2()
+        public static void ParserExampleWithTypeIssues()
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Source_nwd2_error.txt");
 
