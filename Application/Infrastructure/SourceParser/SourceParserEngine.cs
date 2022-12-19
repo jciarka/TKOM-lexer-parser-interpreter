@@ -176,6 +176,7 @@ namespace Application.Infrastructure.SourceParser
                 if (tryParseIfStmt(out statement) ||
                     tryParseReturnStmt(out statement) ||
                     tryParseForeachStmt(out statement) ||
+                    tryParseWhileStmt(out statement) ||
                     tryParseDeclarationStmt(out statement) ||
                     tryParseReturnStmt(out statement) ||
                     tryParseBlock(out statement) || // expression, assignment, financial operations
@@ -281,6 +282,33 @@ namespace Application.Infrastructure.SourceParser
                 throw new InvalidStatementException(current);
 
             statement = new ForeachStmt(parameter!, expression!, bodyStatement!, position);
+            return true;
+        }
+
+        private bool tryParseWhileStmt(out IStatement? statement)
+        {
+            var position = new RulePosition(current.Position!);
+            if (!checkTypeAndAdvance(TokenType.WHILE))
+            {
+                statement = null;
+                return false;
+            }
+
+            // condition
+            assertTypeAndAdvance(new MissingTokenException(current, TokenType.LEFT_PAREN), TokenType.LEFT_PAREN);
+
+            if (!tryParseExpression(out var conditionExpression))
+            {
+                throw new MissingExpressionException(current);
+            }
+
+            assertTypeAndAdvance(new MissingTokenException(current, TokenType.RIGHT_PAREN), TokenType.RIGHT_PAREN);
+
+            // body
+            if (!tryParseStatement(out var bodyStatement))
+                throw new InvalidStatementException(current);
+
+            statement = new WhileStmt(conditionExpression!, bodyStatement!, position);
             return true;
         }
 

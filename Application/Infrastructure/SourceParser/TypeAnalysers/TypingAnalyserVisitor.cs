@@ -595,6 +595,12 @@ namespace Application.Infrastructure.Presenters
             push(node);
         }
 
+        public void Visit(NoneType noneType)
+        {
+            // logic should never enter this method
+            throw new NotImplementedException();
+        }
+
         public bool checkType(TypeBase type, params TypeEnum[] types)
         {
             if (type == null)
@@ -614,11 +620,6 @@ namespace Application.Infrastructure.Presenters
         {
             node.Accept(this);
             return _stack.Pop();
-        }
-
-        public void Visit(NoneType noneType)
-        {
-            throw new NotImplementedException();
         }
     }
 }
