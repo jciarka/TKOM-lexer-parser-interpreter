@@ -11,27 +11,27 @@ using System.Linq;
 
 namespace Application.Infrastructure.Presenters
 {
-    public class TypingAnalyser : IVisitor
+    public class TypeVerifier : IVisitor
     {
         private readonly IErrorHandler _errorHandler;
-        private readonly TypingAnalyserOptions _options;
+        private readonly TypeVerifierOptions _options;
 
         private IEnumerable<FunctionDecl> _allDeclarations = new List<FunctionDecl>();
         private FunctionCallTypeAnalyseContext? _context;
         private Stack<TypeBase> _stack;
 
-        public TypingAnalyser(IErrorHandler errorHandler, TypingAnalyserOptions? options = null)
+        public TypeVerifier(IErrorHandler errorHandler, TypeVerifierOptions? options = null)
         {
             _errorHandler = errorHandler;
-            _options = options ?? new TypingAnalyserOptions();
+            _options = options ?? new TypeVerifierOptions();
             _stack = new Stack<TypeBase>();
         }
 
         public void Visit(ProgramRoot node)
         {
-            _allDeclarations = node.FunctionDeclarations;
+            _allDeclarations = node.FunctionDeclarations.Values;
 
-            foreach (var function in node.FunctionDeclarations)
+            foreach (var function in node.FunctionDeclarations.Values)
             {
                 try
                 {

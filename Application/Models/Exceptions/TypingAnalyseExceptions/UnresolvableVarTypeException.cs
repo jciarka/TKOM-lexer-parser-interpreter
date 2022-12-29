@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class UnresolvableVarTypeException : TypingAnalyseException
+    public class UnresolvableVarTypeException : TypeVerifierException
     {
         public string? Variable { get; }
 

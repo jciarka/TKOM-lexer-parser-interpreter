@@ -4,7 +4,7 @@ using Application.Models.Grammar.Expressions.Terms;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class FunctionNotDeclaredException : TypingAnalyseException
+    public class FunctionNotDeclaredException : TypeVerifierException
     {
         public FunctionNotDeclaredException(FunctionCallExprDescription signature, RulePosition position)
             : base(new CharacterPosition(position), prepareMessage(signature, position))

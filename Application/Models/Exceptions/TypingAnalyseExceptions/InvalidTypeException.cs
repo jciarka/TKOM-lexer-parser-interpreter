@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class InvalidTypeException : TypingAnalyseException
+    public class InvalidTypeException : TypeVerifierException
     {
         public IEnumerable<TypeEnum> ExpectedTypes { get; }
         public TypeBase? CurrentType { get; }

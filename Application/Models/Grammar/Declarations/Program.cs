@@ -1,4 +1,5 @@
-﻿using Application.Infrastructure.Presenters;
+﻿using Application.Infrastructure.Interpreter;
+using Application.Infrastructure.Presenters;
 using Application.Models.Grammar.Expressions.Terms;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ namespace Application.Models.Grammar
 {
     public class ProgramRoot : GrammarRuleBase
     {
-        public IEnumerable<FunctionDecl> FunctionDeclarations { get; private set; }
+        public Dictionary<FunctionSignature, FunctionDecl> FunctionDeclarations { get; private set; }
 
-        public ProgramRoot(IEnumerable<FunctionDecl> functionDeclaration, RulePosition position) : base(position)
+        public ProgramRoot(Dictionary<FunctionSignature, FunctionDecl> functionDeclaration, RulePosition position) : base(position)
         {
             FunctionDeclarations = functionDeclaration;
         }

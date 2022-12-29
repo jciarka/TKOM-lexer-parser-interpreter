@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class VariableRedefiniitionException : TypingAnalyseException
+    public class VariableRedefiniitionException : TypeVerifierException
     {
         public string? Variable { get; }
 

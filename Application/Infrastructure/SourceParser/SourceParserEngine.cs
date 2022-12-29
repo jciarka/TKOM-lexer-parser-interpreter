@@ -1,4 +1,5 @@
 ﻿using Application.Infrastructure.ErrorHandling;
+using Application.Infrastructure.Interpreter;
 using Application.Infrastructure.Lekser;
 using Application.Models.Exceptions;
 using Application.Models.Exceptions.SourseParser;
@@ -30,18 +31,27 @@ namespace Application.Infrastructure.SourceParser
         {
             var functions = parseFunctionDeclarations();
 
-            return new ProgramRoot(functions, functions.First().Position);
+            return new ProgramRoot(functions, functions.Values.First().Position);
         }
 
-        private IEnumerable<FunctionDecl> parseFunctionDeclarations()
+        private Dictionary<FunctionSignature, FunctionDecl> parseFunctionDeclarations()
         {
-            List<FunctionDecl> functions = new List<FunctionDecl>();
+            Dictionary<FunctionSignature, FunctionDecl> functions = new();
 
             try
             {
+                var position = current.Position;
+
                 while (tryParseFunctionDeclaration(out FunctionDecl? function))
                 {
-                    functions.Add(function!);
+                    var signature = new FixedArgumentsFunctionSignature(function!);
+
+                    if (!functions.TryAdd(signature, function!))
+                    {
+                        _errorHandler.HandleError(new FunctionRedefinitionException(signature, new RulePosition(position!)));
+                    };
+
+                    position = current.Position;
                 }
 
                 if (!checkType(TokenType.EOF))
@@ -87,7 +97,7 @@ namespace Application.Infrastructure.SourceParser
             assertTypeAndAdvance(new MissingTokenException(current, TokenType.RIGHT_PAREN), TokenType.RIGHT_PAREN);
 
             // block
-            if (!tryParseBlock(out IStatement? block) || block!.GetType() != typeof(BlockStmt))
+            if (!tryParseBlock(out IStatement? block))
             {
                 throw new InvalidStatementException(current);
             }
@@ -181,9 +191,13 @@ namespace Application.Infrastructure.SourceParser
                     tryParseReturnStmt(out statement) ||
                     tryParseBlock(out statement) || // expression, assignment, financial operations
                     tryParseExpressionStmt(out statement))
+                {
                     return true;
-
-                return false;
+                }
+                else
+                {
+                    return false;
+                }
             }
             catch (ComputingException issue)
             {

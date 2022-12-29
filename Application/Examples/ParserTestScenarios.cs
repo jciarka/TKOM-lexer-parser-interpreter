@@ -64,7 +64,7 @@ namespace Application.Examples
 
                 var root = parserEngine.Parse();
 
-                var typingAnalyser = new TypingAnalyser(new ConsoleErrorHandler(errorReader));
+                var typingAnalyser = new TypeVerifier(new ConsoleErrorHandler(errorReader));
                 typingAnalyser.Visit(root);
 
                 var presenter = new GrammarPresenter();

@@ -19,7 +19,7 @@ namespace Application.Infrastructure.Presenters
 
             write("PROGRAM");
 
-            foreach (var function in node.FunctionDeclarations)
+            foreach (var function in node.FunctionDeclarations.Values)
             {
                 accept(function);
             }

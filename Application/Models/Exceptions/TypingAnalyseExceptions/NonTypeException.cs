@@ -3,7 +3,7 @@ using Application.Models.Types;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class NonTypeException : TypingAnalyseException
+    public class NonTypeException : TypeVerifierException
     {
         public IEnumerable<TypeEnum> ExpectedTypes { get; }
 

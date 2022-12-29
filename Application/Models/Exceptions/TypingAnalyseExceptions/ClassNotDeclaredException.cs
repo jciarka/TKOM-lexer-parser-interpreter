@@ -3,7 +3,7 @@ using Application.Models.Grammar;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class ClassNotDeclaredException : TypingAnalyseException
+    public class ClassNotDeclaredException : TypeVerifierException
     {
         public ClassNotDeclaredException(string className, RulePosition position)
             : base(new CharacterPosition(position), prepareMessage(className, position))
