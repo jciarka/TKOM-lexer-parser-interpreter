@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Values
 {
-    class NullValue : IValue
+    class EmptyValue : IValue
     {
         public TypeBase Type => throw new NotImplementedException();
 
@@ -21,6 +21,11 @@ namespace Application.Models.Values
         public BoolValue EqualEqual(IValue other)
         {
             throw new NotSupportedException();
+        }
+
+        public bool IsNull()
+        {
+            throw new NotImplementedException();
         }
 
         public IValue To(IValue toType, CurrencyTypesInfo currencyInfo)

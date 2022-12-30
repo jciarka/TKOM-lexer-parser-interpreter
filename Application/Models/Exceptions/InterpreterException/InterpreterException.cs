@@ -1,12 +1,24 @@
-﻿namespace Application.Models.Exceptions.SourseParser
+﻿using Application.Models.Grammar;
+using System.Reflection;
+
+namespace Application.Models.Exceptions.SourseParser
 {
-    public class InterpreterException : ComputingException
+    public abstract class RuntimeException : ComputingException
     {
-        public InterpreterException(CharacterPosition position) : base(position)
+        public void SetPosition(RulePosition position)
+        {
+            Position = new CharacterPosition(position);
+            PropertyInfo prop = GetType().GetProperty("Message")!;
+            prop.SetValue(this, getMessage());
+        }
+
+        protected abstract string getMessage();
+
+        public RuntimeException() : base(new CharacterPosition())
         {
         }
 
-        public InterpreterException(CharacterPosition position, string message) : base(position, message)
+        public RuntimeException(RulePosition position) : base(new CharacterPosition(position))
         {
         }
     }

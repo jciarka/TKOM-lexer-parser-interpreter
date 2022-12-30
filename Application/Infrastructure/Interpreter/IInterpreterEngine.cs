@@ -10,5 +10,6 @@ namespace Application.Infrastructure.Interpreter
     {
         void InterpretProgram(ProgramRoot program);
         IValue InterpretFunctionCall(FunctionDecl declaration, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments);
+        IValue InterpretLambdaCall(Lambda lambda, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments);
     }
 }

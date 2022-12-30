@@ -11,7 +11,6 @@ namespace Application.Models.Values
 {
     public interface IValue
     {
-        public bool IsNull();
         TypeBase Type { get; }
         public BoolValue EqualEqual(IValue other);
         public BoolValue BangEqual(IValue other);

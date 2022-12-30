@@ -15,10 +15,10 @@ namespace Application.Models.Values.NativeLibrary
         public ArgumentsCountType ArgumentsCountType => ArgumentsCountType.VARIABLE;
         public FunctionSignature Signature => _signature;
 
-        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
             Console.WriteLine(string.Join("", arguments.Select(x => x.ToString())));
-            return new NullValue();
+            return new EmptyValue();
         }
     }
 }

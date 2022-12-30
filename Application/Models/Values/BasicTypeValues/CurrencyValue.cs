@@ -15,6 +15,11 @@ namespace Application.Models.Values.BasicTypeValues
 
         public decimal Value { get; }
 
+        public CurrencyValue(string currenctType)
+        {
+            Type = new BasicType(currenctType, TypeEnum.CURRENCY);
+        }
+
         public CurrencyValue(string currenctType, decimal value)
         {
             Type = new BasicType(currenctType, TypeEnum.CURRENCY);

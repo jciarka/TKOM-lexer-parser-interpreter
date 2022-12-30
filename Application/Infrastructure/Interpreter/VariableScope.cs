@@ -49,9 +49,24 @@ namespace Application.Infrastructure.Interpreter
             return false;
         }
 
-        public void Set(string name, IValue value)
+        public void Add(string name, IValue value)
         {
             variables[name] = value;
+        }
+
+        public void Set(string name, IValue value)
+        {
+            if (variables.TryGetValue(name, out _))
+            {
+                variables[name] = value;
+                return;
+            }
+
+            if (Previous != null)
+            {
+                Previous.Set(name, value);
+                return;
+            }
         }
     }
 }

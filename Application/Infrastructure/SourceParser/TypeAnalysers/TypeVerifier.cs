@@ -110,11 +110,24 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(PropertyAssignmentStatement node)
         {
+            var exprType = accept(node.Expression);
+            var propertyType = accept(node.Property);
+
+            if (!exprType.Equals(propertyType))
+                _errorHandler.HandleError(new InvalidTypeException(exprType, node.Position, propertyType.Type));
+
             push(new NoneType());
         }
 
-        public void Visit(IndexAssignmentStatement indexAssignmentStatement)
+        public void Visit(IndexAssignmentStatement node)
         {
+            var exprType = accept(node.IndexExpr);
+
+            if (!checkType(exprType, TypeEnum.INT))
+            {
+                _errorHandler.HandleError(new InvalidTypeException(exprType, node.Position, TypeEnum.INT));
+            }
+
             push(new NoneType());
         }
 
@@ -130,7 +143,7 @@ namespace Application.Infrastructure.Presenters
             {
                 node.Type = expressionType;
             }
-            else if (!node.Type.Equals(expressionType))
+            else if (expressionType != null && !node.Type.Equals(expressionType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, node.Type.Type));
             }

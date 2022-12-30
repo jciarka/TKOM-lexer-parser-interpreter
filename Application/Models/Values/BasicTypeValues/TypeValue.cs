@@ -14,6 +14,11 @@ namespace Application.Models.Values.BasicTypeValues
         public TypeBase Type => new TypeType(Value);
         public TypeBase Value { get; }
 
+        public TypeValue()
+        {
+            Value = new NoneType();
+        }
+
         public TypeValue(TypeBase value)
         {
             Value = value;
@@ -32,6 +37,11 @@ namespace Application.Models.Values.BasicTypeValues
         public IValue To(IValue toType, CurrencyTypesInfo currencyInfo)
         {
             throw new NotSupportedException();
+        }
+
+        public override string ToString()
+        {
+            return Value.Name;
         }
     }
 }

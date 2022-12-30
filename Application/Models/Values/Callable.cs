@@ -17,7 +17,7 @@ namespace Application.Models.Values
             _declaration = functionDecl;
         }
 
-        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
             return interpreter.InterpretFunctionCall(_declaration, _declaration.Parameters, arguments);
         }

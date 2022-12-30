@@ -15,6 +15,11 @@ namespace Application.Models.Values.BasicTypeValues
 
         public bool Value { get; }
 
+        public BoolValue()
+        {
+            Value = false;
+        }
+
         public BoolValue(bool value)
         {
             Value = value;

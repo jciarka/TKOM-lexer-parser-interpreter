@@ -15,6 +15,11 @@ namespace Application.Models.Values.BasicTypeValues
 
         public int Value { get; }
 
+        public IntValue()
+        {
+            Value = 0;
+        }
+
         public IntValue(int value)
         {
             Value = value;

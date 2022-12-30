@@ -29,6 +29,63 @@ void main()
     int y = 30;
     int z = 5;
 
-    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
+    print( 10 + 20 );
+
+    print("nwd (", x, ", ", y, ") = ", nwd(x, z)); 
     print("Silnia ", z, " wynosi = ", factorial(z));  # Silnia 3 = 6
+
+    var cad = 20 CAD;
+    var usd = cad to USD;
+
+    int i;
+
+    while(i < 10)
+    {
+        print("i = ", i);
+        i = i + 1;
+    }
+
+    print("USD: ", usd, "\n");
+
+    var test1 = Account<USD>();
+    var test2 = Account<USD>(500);
+    var test3 = test2.Copy();
+
+    print("Account test1 = ", test1.Ballance, " ", test1.Currency);
+    print("Account test2 = ", test2.Ballance, " ", test2.Currency);
+    print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
+
+    test2.Ballance = 5000D;
+    test3.Ballance = 22D;
+
+    print("Account test1 = ", test1.Ballance, " ", test1.Currency);
+    print("Account test2 after change = ", test2.Ballance, " ", test2.Currency);
+    print("Account test3 = ", test3.Ballance, " ", test3.Currency);
+
+    var accounts = Collection< Account<USD> >();
+
+    # Dodawanie
+    accounts.Add(test1);
+    accounts.Add(test2);
+
+    var account = accounts[1];
+    print("accounts[1] = ", account.Ballance, " ", account.Currency);
+
+    accounts.Delete(0);
+    account = accounts[0];
+    print("accounts[0] = ", account.Ballance, " ", account.Currency);
+
+    accounts.Add(test1);
+    accounts.Add(test2);
+    accounts.Add(test3);
+    accounts.Add(test1);
+
+    var found = accounts.First(lambda Account x => {
+        return x.Ballance > 1000D;
+    });
+
+    if(found != null)
+    {
+        print("found = ", account.Ballance, " ", account.Currency);
+    }
 }

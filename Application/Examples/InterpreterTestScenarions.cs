@@ -22,13 +22,15 @@ namespace Application.Examples
             var conf_path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\CurrencyConfguration_Ok.txt");
 
             CurrencyTypesInfo curencyInfo;
-            using (var reader = new FileSourceReader(conf_path))
+
             using (var errorReader = new FileSourceRandomReader(conf_path))
+            using (var reader = new FileSourceReader(conf_path))
             {
+                var configurationErrorHandler = new ConsoleErrorHandler(errorReader);
+
                 var lexer = new LexerEngine(reader);
 
-                var errorHandler = new ConsoleErrorHandler(errorReader);
-                var parser = new ConfigurationParserEngine(lexer, errorHandler);
+                var parser = new ConfigurationParserEngine(lexer, configurationErrorHandler);
 
                 TokenPresenter presenter = new TokenPresenter();
 
@@ -37,22 +39,32 @@ namespace Application.Examples
 
             var source_path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\Interpret_basic.txt");
 
-            using (var reader = new FileSourceReader(source_path))
             using (var errorReader = new FileSourceRandomReader(source_path))
+            using (var reader = new FileSourceReader(source_path))
             {
+                var errorHandler = new ConsoleErrorHandler(errorReader);
+
                 var lexer = new LexerEngine(
                     reader,
                     new LexerOptions
                     {
-                        TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" })
+                        TypesInfo = new Models.Types.TypesInfoProvider(curencyInfo.currencyTypes)
                     });
 
                 var parserEngine = new SourceParserEngine(
                     new SkipCommentsFilter(lexer),
-                    new ParserOptions { TypesInfo = new Models.Types.TypesInfoProvider(new string[] { "USD", "PLN", "CHF" }) },
-                    new ConsoleErrorHandler(errorReader));
+                    new ParserOptions { TypesInfo = new Models.Types.TypesInfoProvider(curencyInfo.currencyTypes) },
+                    errorHandler);
 
                 var root = parserEngine.Parse();
+
+                var typingAnalyser = new TypeVerifier(errorHandler);
+                typingAnalyser.Visit(root);
+
+                if (errorHandler.ErrorCount() > 0)
+                {
+                    return;
+                }
 
                 var interpreter = new InterpreterEngine(
                         new ConsoleErrorHandler(errorReader),
@@ -64,3 +76,4 @@ namespace Application.Examples
         }
     }
 }
+

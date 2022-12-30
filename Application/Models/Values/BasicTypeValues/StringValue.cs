@@ -15,6 +15,11 @@ namespace Application.Models.Values.BasicTypeValues
 
         public string Value { get; }
 
+        public StringValue()
+        {
+            Value = "";
+        }
+
         public StringValue(string value)
         {
             Value = value;

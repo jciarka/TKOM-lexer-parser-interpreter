@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Values
 {
-    public class Instance : IInstance, IValue
+    public class Instance : IInstance
     {
         public IClass Class { get; }
 
@@ -25,19 +25,8 @@ namespace Application.Models.Values
 
             foreach (var property in @class.Properties)
             {
-                Properties.Add(property.Key, new NullValue());
+                Properties.Add(property.Key, ValuesFactory.GetDefaultValue(property.Value));
             }
-        }
-
-        public BoolValue BangEqual(IValue other)
-        {
-            return new BoolValue((IValue)this != other);
-        }
-
-        public BoolValue EqualEqual(IValue other)
-        {
-            // reference to same object
-            return new BoolValue((IValue)this == other);
         }
 
         public IValue GetProperty(string name)
@@ -47,19 +36,22 @@ namespace Application.Models.Values
 
         public void SetProperty(string name, IValue value)
         {
-            Properties.TryAdd(name, value);
+            Properties[name] = value;
         }
 
-        public IValue InvokeMethod(string name, IEnumerable<IValue> arguments)
+        public IValue InvokeMethod(IInterpreterEngine interpreter, string name, IEnumerable<IValue> arguments)
         {
             var argumentTypes = arguments.Select(x => x.Type).ToArray();
-            var signature = new FunctionCallExprDescription(name, arguments), out var returnType))
+            var signature = new FixedArgumentsFunctionSignature(null!, name, argumentTypes);
 
+            var callable = Class.Methods[signature].Item2;
+
+            return callable.Call(interpreter, new IValue[] { new Reference(this) }.Union(arguments));
         }
 
         public IValue To(IValue toType, CurrencyTypesInfo currencyInfo)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

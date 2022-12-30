@@ -56,5 +56,10 @@ namespace Application.Infrastructure.Presenters
 
             Console.WriteLine(builder.ToString());
         }
+
+        public int ErrorCount()
+        {
+            return _errors.Count();
+        }
     }
 }

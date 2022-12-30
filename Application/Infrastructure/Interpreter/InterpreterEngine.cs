@@ -6,6 +6,7 @@ using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Values;
 using Application.Models.Values.BasicTypeValues;
+using Application.Models.Values.NativeLibrary;
 
 namespace Application.Infrastructure.Interpreter
 {
@@ -51,6 +52,37 @@ namespace Application.Infrastructure.Interpreter
             finally
             {
                 _functionContext = oldContext;
+            }
+
+            return value!;
+        }
+
+        public IValue InterpretLambdaCall(Lambda lambda, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments)
+        {
+            IValue? value = null;
+
+            _functionContext!.PushScope();
+
+            foreach (var paramValue in parameters.Zip(arguments))
+            {
+                _functionContext.Scope.Add(paramValue.First.Identifier, paramValue.Second);
+            }
+
+            try
+            {
+                accept(lambda.Stmt);
+            }
+            catch (ReturnValue returnValue)
+            {
+                value = returnValue.Value;
+            }
+            catch (ComputingException)
+            {
+                throw;
+            }
+            finally
+            {
+                _functionContext.PopScope();
             }
 
             return value!;
@@ -110,35 +142,54 @@ namespace Application.Infrastructure.Interpreter
                 _functionContext!.PopScope();
             }
 
-            push(new NullValue());
+            push(new EmptyValue());
         }
 
         public void Visit(IdentifierAssignmentStatement node)
         {
             _functionContext!.Scope.Set(node.Identifier.Name, accept(node.Expression));
-            push(new NullValue());
+            push(new EmptyValue());
         }
 
-        public void Visit(PropertyAssignmentStatement propertyAssignmentStatement)
+        public void Visit(PropertyAssignmentStatement node)
         {
-            throw new NotImplementedException();
+            var newValue = accept(node.Expression);
+            var @object = (Reference)accept(node.Property.Object);
+
+            if (@object.Instance == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Property {node.Property.Property}");
+            }
+
+            @object.Instance.SetProperty(node.Property.Property, newValue);
+            push(new EmptyValue());
         }
 
-        public void Visit(IndexAssignmentStatement indexAssignmentStatement)
+        public void Visit(IndexAssignmentStatement node)
         {
-            throw new NotImplementedException();
+            var newValue = accept(node.Expression);
+            var @object = (Reference)accept(node.IndexExpr.Object);
+            var index = ((IntValue)accept(node.IndexExpr.IndexExpression)).Value;
+
+            if (@object.Instance == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Index {index}");
+            }
+
+            ((CollectionInstance)@object.Instance).Values[index] = newValue;
+            push(new EmptyValue());
         }
 
         public void Visit(DeclarationStmt node)
         {
-            var expressionValue = node.Expression != null ? accept(node.Expression) : new NullValue();
-            _functionContext!.Scope.Set(node.Identifier.Name, expressionValue);
-            push(new NullValue());
+            var expressionValue = node.Expression != null ? accept(node.Expression) : ValuesFactory.GetDefaultValue(node.Type!);
+            _functionContext!.Scope.Add(node.Identifier.Name, expressionValue);
+            push(new EmptyValue());
         }
 
         public void Visit(ReturnStmt node)
         {
-            var value = node.ReturnExpression != null ? accept(node.ReturnExpression) : new NullValue();
+            var value = node.ReturnExpression != null ? accept(node.ReturnExpression) : new EmptyValue();
             throw new ReturnValue(value);
         }
 
@@ -149,7 +200,7 @@ namespace Application.Infrastructure.Interpreter
                 accept(node.Statement);
             }
 
-            push(new NullValue());
+            push(new EmptyValue());
         }
 
         public void Visit(IfStmt node)
@@ -163,7 +214,7 @@ namespace Application.Infrastructure.Interpreter
                 accept(node.ElseStatement);
             }
 
-            push(new NullValue());
+            push(new EmptyValue());
         }
 
         public void Visit(ForeachStmt foreachStmt)
@@ -186,9 +237,9 @@ namespace Application.Infrastructure.Interpreter
             throw new NotSupportedException();
         }
 
-        public void Visit(Lambda lambda)
+        public void Visit(Lambda node)
         {
-            throw new NotImplementedException();
+            push(new Reference(new DelegateInstance(node.Parameter.Type, node)));
         }
 
         public void Visit(Identifier identifier)
@@ -339,24 +390,57 @@ namespace Application.Infrastructure.Interpreter
             throw new NotImplementedException();
         }
 
-        public void Visit(ConstructiorCallExpr constructiorCallExpr)
+        public void Visit(ConstructiorCallExpr node)
         {
-            throw new NotImplementedException();
+            var arguments = node.Arguments.Select(x => accept(x));
+            var argumentTypes = arguments.Select(x => x.Type);
+
+            _programContext!.ClassSet.TryFindConstructor(node.Type, argumentTypes, out var constructor);
+
+            push(constructor!.Call(this, arguments));
         }
 
-        public void Visit(ObjectPropertyExpr objectPropertyExpr)
+        public void Visit(ObjectPropertyExpr node)
         {
-            throw new NotImplementedException();
+            var @object = (Reference)accept(node.Object);
+
+            if (@object.Instance == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Property {node.Property}");
+            }
+
+            push(@object.Instance.GetProperty(node.Property));
         }
 
-        public void Visit(ObjectIndexExpr objectIndexExpr)
+        public void Visit(ObjectIndexExpr node)
         {
-            throw new NotImplementedException();
+            var @object = (Reference)accept(node.Object);
+            var index = ((IntValue)accept(node.IndexExpression)).Value;
+
+            if (@object.Instance == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Index {index}");
+            }
+
+            push(((CollectionInstance)@object.Instance).Values[index]);
         }
 
-        public void Visit(ObjectMethodExpr objectMethodExpr)
+        public void Visit(ObjectMethodExpr node)
         {
-            throw new NotImplementedException();
+            var @object = (Reference)accept(node.Object);
+            var arguments = node.Arguments.Select(x => accept(x));
+            var argumentsTypes = arguments.Select(x => x.Type);
+
+            if (@object.Instance == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Method {node.Method}");
+            }
+
+            var signature = new FixedArgumentsFunctionSignature(null!, node.Method, argumentsTypes);
+
+            var method = @object.Instance.Class.Methods[signature].Item2;
+
+            push(method.Call(this, (new IValue[] { @object }).Union(arguments)));
         }
 
         public void Visit(BracedExprTerm node)

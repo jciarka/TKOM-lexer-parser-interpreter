@@ -9,7 +9,7 @@ namespace Application.Models.Values
 {
     public interface ICallable
     {
-        IValue Call(IInterpreterEngine interpreter, params IValue[] arguments);
+        IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments);
     }
 
     public interface IMethod : ICallable

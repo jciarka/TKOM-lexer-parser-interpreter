@@ -15,6 +15,11 @@ namespace Application.Models.Values.BasicTypeValues
 
         public decimal Value { get; }
 
+        public DecimalValue()
+        {
+            Value = 0;
+        }
+
         public DecimalValue(decimal value)
         {
             Value = value;

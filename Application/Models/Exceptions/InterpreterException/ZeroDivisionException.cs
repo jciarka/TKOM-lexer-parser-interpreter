@@ -11,21 +11,19 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.SourseParser
 {
-    public class ZeroDivisionException : TypeVerifierException
+    public class ZeroDivisionException : RuntimeException
     {
-        public ZeroDivisionException()
-            : base(new CharacterPosition(), prepareMessage(new RulePosition(new CharacterPosition())))
+        public ZeroDivisionException() : base()
         {
         }
 
-        public ZeroDivisionException(RulePosition position)
-            : base(new CharacterPosition(position), prepareMessage(position))
+        public ZeroDivisionException(RulePosition position) : base(position)
         {
         }
 
-        private static string prepareMessage(RulePosition position)
+        protected override string getMessage()
         {
-            return $"(LINE: {position.Line}, column: {position.Column}) " +
+            return $"(LINE: {Position.Line}, column: {Position.Column}) " +
                 $"Zero division exception";
         }
     }
