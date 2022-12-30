@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Remove="TestFiles\CurrencyConfguration_Errors.txt" />
+    <None Remove="TestFiles\Interpret_basic.txt" />
     <None Remove="TestFiles\Source_nwd.txt" />
     <None Remove="TestFiles\Source_nwd2.txt" />
     <None Remove="TestFiles\Source_nwd2_error.txt" />

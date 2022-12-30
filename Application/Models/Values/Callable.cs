@@ -17,9 +17,9 @@ namespace Application.Models.Values
             _declaration = functionDecl;
         }
 
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
-            throw new NotImplementedException();
+            return interpreter.InterpretFunctionCall(_declaration, _declaration.Parameters, arguments);
         }
     }
 }

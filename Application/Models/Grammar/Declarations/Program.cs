@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Grammar
 {
-    public class ProgramRoot : GrammarRuleBase
+    public class ProgramRoot : GrammarRuleBase, IVisitable
     {
         public Dictionary<FunctionSignature, FunctionDecl> FunctionDeclarations { get; private set; }
 
@@ -18,7 +18,7 @@ namespace Application.Models.Grammar
             FunctionDeclarations = functionDeclaration;
         }
 
-        public void Accept(IVisitor visitor, int v)
+        public void Accept(IVisitor visitor)
         {
             visitor.Visit(this);
         }

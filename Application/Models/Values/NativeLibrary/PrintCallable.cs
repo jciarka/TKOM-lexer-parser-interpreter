@@ -15,9 +15,10 @@ namespace Application.Models.Values.NativeLibrary
         public ArgumentsCountType ArgumentsCountType => ArgumentsCountType.VARIABLE;
         public FunctionSignature Signature => _signature;
 
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(string.Join("", arguments.Select(x => x.ToString())));
+            return new NullValue();
         }
     }
 }

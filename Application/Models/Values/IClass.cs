@@ -12,6 +12,8 @@ namespace Application.Models.Values
     public interface IClass
     {
         string Name { get; }
+        TypeBase Type { get; }
+
         ReadOnlyDictionary<FunctionSignature, IConstructor> Constructors { get; }
         ReadOnlyDictionary<string, TypeBase> Properties { get; }
         ReadOnlyDictionary<FunctionSignature, Tuple<TypeBase, IMethod>> Methods { get; }

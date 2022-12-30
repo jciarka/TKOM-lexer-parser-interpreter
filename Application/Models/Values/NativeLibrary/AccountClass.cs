@@ -23,6 +23,8 @@ namespace Application.Models.Values.NativeLibrary
         public string Name => TypeName.ACCOUNT;
         public TypeBase _currency;
 
+        public TypeBase Type => new GenericType(TypeName.ACCOUNT, _currency);
+
         public AccountClass(TypeBase currency)
         {
             _currency = currency;
@@ -72,11 +74,12 @@ namespace Application.Models.Values.NativeLibrary
                         new(new GenericType(TypeName.ACCOUNT, _currency), new AccountCopyMethod())
                     }
                 });
+
     }
 
     public class AccountClassTypeConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -84,7 +87,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class AccountClassTypeAndIntValueConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -92,7 +95,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class AccountClassTypeAndDeciamlValueConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -100,7 +103,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class AccountCopyMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }

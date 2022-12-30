@@ -108,7 +108,7 @@ namespace Application.Infrastructure.Presenters
             push(new NoneType());
         }
 
-        public void Visit(PropertyAssignmentStatement propertyAssignmentStatement)
+        public void Visit(PropertyAssignmentStatement node)
         {
             push(new NoneType());
         }
@@ -496,9 +496,24 @@ namespace Application.Infrastructure.Presenters
                 {
                     _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
                 }
+
+                if (!checkOperator(operand.Item1, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)
+                    && !checkType(next!, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY))
+                {
+                    // only comparable type expected
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY));
+                }
             }
 
             push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
+        }
+
+        private bool checkOperator(TokenType given, params TokenType[] expected)
+        {
+            if (expected.Contains(given))
+                return true;
+
+            return false;
         }
 
         public void Visit(PrctOfExpr node)

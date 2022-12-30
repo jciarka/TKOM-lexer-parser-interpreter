@@ -23,6 +23,7 @@ namespace Application.Models.Values.NativeLibrary
         public string Name => TypeName.COLLECTION;
 
         public TypeBase ParametrisingType { get; }
+        public TypeBase Type => new GenericType(TypeName.COLLECTION, ParametrisingType);
 
         public CollectionClass(TypeBase parametrisingType)
         {
@@ -91,7 +92,6 @@ namespace Application.Models.Values.NativeLibrary
                         new(new GenericType(TypeName.COLLECTION, ParametrisingType), new CollectionClassCopyMethod()) },
                     }
                 );
-
     }
 
     public class CollectionClassConstructor : IConstructor
@@ -103,7 +103,7 @@ namespace Application.Models.Values.NativeLibrary
             _parametrisingType = parametrisingType;
         }
 
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -111,7 +111,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassAddMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -119,7 +119,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassDeleteMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -127,7 +127,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassFirstMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -135,7 +135,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassLastMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -143,7 +143,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassWhereMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
@@ -151,7 +151,7 @@ namespace Application.Models.Values.NativeLibrary
 
     public class CollectionClassCopyMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, params IValue[] arguments)
         {
             throw new NotImplementedException();
         }
