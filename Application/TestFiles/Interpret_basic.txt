@@ -54,13 +54,22 @@ void main()
     print("Account test1 = ", test1.Ballance, " ", test1.Currency);
     print("Account test2 = ", test2.Ballance, " ", test2.Currency);
     print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
-
+    
+    test1.Ballance = 2000D;
     test2.Ballance = 5000D;
     test3.Ballance = 22D;
 
     print("Account test1 = ", test1.Ballance, " ", test1.Currency);
     print("Account test2 after change = ", test2.Ballance, " ", test2.Currency);
-    print("Account test3 = ", test3.Ballance, " ", test3.Currency);
+    print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
+
+    test1 << 1 USD;
+    test1 >> 1000 EUR >> test3;
+
+    print("Account test1 = ", test1.Ballance, " ", test1.Currency);
+    print("Account test2 after change = ", test2.Ballance, " ", test2.Currency);
+    print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
+
 
     var accounts = Collection< Account<USD> >();
 

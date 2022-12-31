@@ -89,7 +89,7 @@ namespace Application.Models.Values.NativeLibrary
 
         public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            var instance = new Instance(_class);
+            var instance = new AccountInstace(_class);
 
             instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
 
@@ -108,7 +108,7 @@ namespace Application.Models.Values.NativeLibrary
 
         public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            var instance = new Instance(_class);
+            var instance = new AccountInstace(_class);
 
             instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
 
@@ -130,7 +130,7 @@ namespace Application.Models.Values.NativeLibrary
 
         public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            var instance = new Instance(_class);
+            var instance = new AccountInstace(_class);
 
             instance.SetProperty("Ballance", arguments.First());
 
@@ -144,7 +144,7 @@ namespace Application.Models.Values.NativeLibrary
         {
             var old = ((Reference)arguments.First()).Instance!;
 
-            var newInstance = new Instance(old.Class);
+            var newInstance = new AccountInstace(old.Class);
 
             foreach (var property in old.Class.Properties.Keys)
             {

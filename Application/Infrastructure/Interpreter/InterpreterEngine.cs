@@ -4,6 +4,7 @@ using Application.Models.Exceptions;
 using Application.Models.Exceptions.SourseParser;
 using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
+using Application.Models.Tokens;
 using Application.Models.Values;
 using Application.Models.Values.BasicTypeValues;
 using Application.Models.Values.NativeLibrary;
@@ -234,14 +235,41 @@ namespace Application.Infrastructure.Interpreter
             push(new EmptyValue());
         }
 
-        public void Visit(FinancialToStmt financialToStmt)
+        public void Visit(FinancialToStmt node)
         {
-            throw new NotImplementedException();
+            var accountFrom = (AccountInstace)((Reference)accept(node.AccountExpression)).Instance!;
+
+            var value = accept(node.ValueExpression);
+
+            if (node.Operator == TokenType.TRANSFER_PRCT_TO)
+            {
+                value = accountFrom.PrctOf(value)
+                    .To(new TypeValue(accountFrom.Type), null!);
+            }
+
+            accountFrom.Fund(_options.CurrencyTypesInfo, value);
+
+            push(new NullValue());
         }
 
-        public void Visit(FinancialFromStmt financialFromStmt)
+        public void Visit(FinancialFromStmt node)
         {
-            throw new NotImplementedException();
+            var accountFrom = (AccountInstace)((Reference)accept(node.AccountFromExpression)).Instance!;
+
+            var accountTo = node.AccountToExpression != null ?
+                (AccountInstace)((Reference)accept(node.AccountToExpression)).Instance! : null;
+
+            var value = accept(node.ValueExpression);
+
+            if (node.Operator == TokenType.TRANSFER_PRCT_FROM)
+            {
+                value = accountFrom.PrctOf(value)
+                    .To(new TypeValue(accountFrom.Type), null!);
+            }
+
+            accountFrom.Withdraw(_options.CurrencyTypesInfo, value, accountTo);
+
+            push(new NullValue());
         }
 
         public void Visit(Parameter parameter)
