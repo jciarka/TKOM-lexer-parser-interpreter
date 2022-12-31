@@ -70,7 +70,7 @@ namespace Application.Infrastructure.Interpreter
 
             try
             {
-                accept(lambda.Stmt);
+                value = accept(lambda.Stmt);
             }
             catch (ReturnValue returnValue)
             {
@@ -217,9 +217,21 @@ namespace Application.Infrastructure.Interpreter
             push(new EmptyValue());
         }
 
-        public void Visit(ForeachStmt foreachStmt)
+        public void Visit(ForeachStmt node)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)accept(node.CollectionExpression)).Instance!;
+
+            foreach (var item in collection.Values)
+            {
+                _functionContext!.PushScope();
+
+                _functionContext.Scope.Add(node.Parameter.Identifier, item);
+                node.Statement.Accept(this);
+
+                _functionContext!.PopScope();
+            }
+
+            push(new EmptyValue());
         }
 
         public void Visit(FinancialToStmt financialToStmt)
@@ -469,6 +481,9 @@ namespace Application.Infrastructure.Interpreter
                     return;
                 case Models.Types.TypeEnum.CURRENCY:
                     push(new CurrencyValue(literal.Type.Name, (decimal)literal.DecimalValue!)); ;
+                    return;
+                case Models.Types.TypeEnum.NULL:
+                    push(new NullValue());
                     return;
             }
 

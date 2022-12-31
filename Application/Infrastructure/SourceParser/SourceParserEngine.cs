@@ -964,9 +964,25 @@ namespace Application.Infrastructure.SourceParser
             {
                 return true;
             }
+            else if (tryParseNull(out expression))
+            {
+                return true;
+            }
 
             expression = null;
             return false;
+        }
+
+        private bool tryParseNull(out IExpression? term)
+        {
+            if (!checkTypeAndAdvance(TokenType.NULL))
+            {
+                term = null;
+                return false;
+            }
+
+            term = new Literal(new RulePosition(current.Position!));
+            return true;
         }
 
         private bool tryParseParentisedExpression(out IExpression? term)

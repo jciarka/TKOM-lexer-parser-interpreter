@@ -168,7 +168,7 @@ namespace Application.Infrastructure.Presenters
                 }
                 else
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, TypeEnum.VOID));
+                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, TypeEnum.NULL));
                 }
             }
 
@@ -212,19 +212,32 @@ namespace Application.Infrastructure.Presenters
         {
             var collectionType = accept(node.CollectionExpression);
 
-            if (collectionType!.GetType() != typeof(GenericType))
+            if (collectionType!.GetType() != typeof(GenericType) || !collectionType.Name.Equals(TypeName.COLLECTION))
             {
-                _errorHandler.HandleError(new InvalidTypeException(collectionType, node.Position, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(collectionType, node.Position, TypeEnum.COLLECTION));
             }
 
             var genericCollectionType = (GenericType)collectionType;
 
-            if (node.Parameter.Type != genericCollectionType)
+            if (!node.Parameter.Type.Equals(genericCollectionType.ParametrisingType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(genericCollectionType, node.Position, node.Parameter.Type.Type));
             }
 
-            node.Statement.Accept(this);
+            _context!.PushScope();
+            _context!.Scope.TryAdd(node.Parameter.Identifier, node.Parameter.Type);
+            try
+            {
+                node.Statement.Accept(this);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                _context!.PopScope();
+            }
 
             push(new NoneType());
         }
@@ -507,7 +520,10 @@ namespace Application.Infrastructure.Presenters
 
                 if (first!.Type != next?.Type)
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
+                    if (!checkOperator(operand.Item1, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL) || next?.Type != TypeEnum.NULL)
+                    {
+                        _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
+                    }
                 }
 
                 if (!checkOperator(operand.Item1, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)

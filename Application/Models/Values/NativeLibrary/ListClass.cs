@@ -183,11 +183,6 @@ namespace Application.Models.Values.NativeLibrary
 
             var hits = collection.Values.Where(x => ((BoolValue)lambda.Call(interpreter, new IValue[] { x })).Value);
 
-            if (hits.Count() == 0)
-            {
-                return ValuesFactory.GetDefaultValue(((GenericType)collection.Type).ParametrisingType);
-            }
-
             var newInstance = new CollectionInstance(collection.Class);
 
             foreach (var hit in hits)

@@ -38,8 +38,12 @@ namespace Application.Models.Values
                 case Types.TypeEnum.CURRENCY:
                     return new CurrencyValue(type.Name);
 
-                case Types.TypeEnum.VOID:
+                case Types.TypeEnum.GENERIC:
+                    return new Reference(type);
+
+                case Types.TypeEnum.NULL:
                     throw new NotSupportedException();
+
             }
             throw new NotSupportedException();
         }

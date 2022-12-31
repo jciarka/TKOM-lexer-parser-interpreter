@@ -28,6 +28,11 @@ namespace Application.Models.Values
 
         public BoolValue EqualEqual(IValue other)
         {
+            if (other.GetType() == typeof(NullValue))
+            {
+                return new BoolValue(Instance == null);
+            }
+
             var otherRef = other as Reference;
 
             if (otherRef == null) return new BoolValue(false);
