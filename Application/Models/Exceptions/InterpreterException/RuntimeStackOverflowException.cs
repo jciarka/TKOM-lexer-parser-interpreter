@@ -11,20 +11,20 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.Interpreter
 {
-    public class ZeroDivisionException : RuntimeException
+    public class RuntimeStackOverflowException : RuntimeException
     {
-        public ZeroDivisionException() : base()
+        public RuntimeStackOverflowException() : base()
         {
         }
 
-        public ZeroDivisionException(RulePosition position) : base(position)
+        public RuntimeStackOverflowException(RulePosition position) : base(position)
         {
         }
 
         protected override string getMessage()
         {
             return $"(LINE: {Position.Line}, column: {Position.Column}) " +
-                $"Zero division exception";
+                $"Stack overflow exception";
         }
     }
 }

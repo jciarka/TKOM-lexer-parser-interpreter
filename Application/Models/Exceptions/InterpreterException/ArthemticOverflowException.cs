@@ -11,20 +11,20 @@ using System.Threading.Tasks;
 
 namespace Application.Models.Exceptions.Interpreter
 {
-    public class ZeroDivisionException : RuntimeException
+    public class ArthemticOverflowException : RuntimeException
     {
-        public ZeroDivisionException() : base()
+        public ArthemticOverflowException() : base()
         {
         }
 
-        public ZeroDivisionException(RulePosition position) : base(position)
+        public ArthemticOverflowException(RulePosition position) : base(position)
         {
         }
 
         protected override string getMessage()
         {
             return $"(LINE: {Position.Line}, column: {Position.Column}) " +
-                $"Zero division exception";
+                $"Overflow at arthemtic operation";
         }
     }
 }

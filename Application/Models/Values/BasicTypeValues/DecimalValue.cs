@@ -1,4 +1,5 @@
 ﻿using Application.Models.ConfigurationParser;
+using Application.Models.Exceptions.Interpreter;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
 using System;
@@ -27,22 +28,49 @@ namespace Application.Models.Values.BasicTypeValues
 
         public IValue Add(IValue other)
         {
-            return new DecimalValue(Value + ((DecimalValue)other).Value);
+            try
+            {
+                checked { return new DecimalValue(Value + ((DecimalValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Sub(IValue other)
         {
-            return new DecimalValue(Value - ((DecimalValue)other).Value);
+            try
+            {
+                checked { return new DecimalValue(Value - ((DecimalValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Mul(IValue other)
         {
-            return new DecimalValue(Value * ((DecimalValue)other).Value);
+            try
+            {
+                checked { return new DecimalValue(Value * ((DecimalValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Div(IValue other)
         {
-            return new DecimalValue(Value / ((DecimalValue)other).Value);
+            var dOther = (DecimalValue)other;
+            if (dOther.Value == 0)
+            {
+                throw new ZeroDivisionException();
+            }
+
+            return new DecimalValue(Value / dOther.Value);
         }
 
         public BoolValue Greater(IValue other)

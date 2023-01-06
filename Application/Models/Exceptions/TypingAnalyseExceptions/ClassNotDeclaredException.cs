@@ -28,4 +28,17 @@ namespace Application.Models.Exceptions.SourseParser
             return $"(Line: {position.Line}) Property {propertyName} does not exists at class {className}.";
         }
     }
+
+    internal class MethodNotDeclaredException : ComputingException
+    {
+        public MethodNotDeclaredException(string className, string methodName, RulePosition position)
+            : base(new CharacterPosition(position), prepareMessage(className, methodName, position))
+        {
+        }
+
+        private static string prepareMessage(string className, string methodName, RulePosition position)
+        {
+            return $"(Line: {position.Line}) Method {methodName} does not exists at class {className}.";
+        }
+    }
 }

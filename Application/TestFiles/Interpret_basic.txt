@@ -25,13 +25,14 @@ int factorial(int a)
 
 void main()
 {	
-    int x = 40;
+    int x = 100;
     int y = 30;
     int z = 5;
+    # int z = 15;
 
     print( 10 + 20 );
 
-    print("nwd (", x, ", ", y, ") = ", nwd(x, z)); 
+    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
     print("Silnia ", z, " wynosi = ", factorial(z));  # Silnia 3 = 6
 
     var cad = 20 CAD;
@@ -102,7 +103,7 @@ void main()
         print("found = none");
     }
 
-    var foundItems = accounts.Where(lambda Account x => x.Ballance > 10000D);
+    var foundItems = accounts.Where(lambda Account x => x.Ballance > 1000D);
 
     int j = 1;
     foreach(Account<USD> acc in foundItems)
@@ -110,4 +111,21 @@ void main()
         print(j, ". found = ", acc.Ballance, " ", acc.Currency);
         j = j + 1;
     }
+
+    # Zero division error example
+    # print(10/0);
+
+    # Zero division error example
+    # int m = 100000 * 100000 ;
+
+    # Null reference error exception example
+    Account<USD> nulltest;
+    # nulltest.Ballance;
+
+    # Index out of range exception example
+    Collection< int > ints = Collection< int >();
+    ints.Add(2);
+    ints.Add(3);
+    # print(ints[2]);
+
 }

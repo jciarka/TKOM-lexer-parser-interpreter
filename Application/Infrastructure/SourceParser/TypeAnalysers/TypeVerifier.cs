@@ -608,7 +608,7 @@ namespace Application.Infrastructure.Presenters
             if (!_context!.ClassSet.TryFindMethod(
                 objectType, new FunctionCallExprDescription(node.Method, parameterTypes), out var returnType))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
+                _errorHandler?.HandleError(new MethodNotDeclaredException(objectType.Name, node.Method, node.Position));
             }
 
             push(returnType!);

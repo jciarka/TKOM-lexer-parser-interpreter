@@ -1,4 +1,6 @@
 ﻿using Application.Models.ConfigurationParser;
+using Application.Models.Exceptions.Interpreter;
+using Application.Models.Exceptions.SourseParser;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
 using System;
@@ -28,22 +30,49 @@ namespace Application.Models.Values.BasicTypeValues
 
         public IValue Add(IValue other)
         {
-            return new CurrencyValue(Type.Name, Value + ((CurrencyValue)other).Value);
+            try
+            {
+                checked { return new CurrencyValue(Type.Name, Value + ((CurrencyValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Sub(IValue other)
         {
-            return new CurrencyValue(Type.Name, Value - ((CurrencyValue)other).Value);
+            try
+            {
+                checked { return new CurrencyValue(Type.Name, Value - ((CurrencyValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Mul(IValue other)
         {
-            return new CurrencyValue(Type.Name, Value * ((CurrencyValue)other).Value);
+            try
+            {
+                checked { return new CurrencyValue(Type.Name, Value * ((CurrencyValue)other).Value); }
+            }
+            catch (OverflowException)
+            {
+                throw new ArthemticOverflowException();
+            }
         }
 
         public IValue Div(IValue other)
         {
-            return new CurrencyValue(Type.Name, Value / ((CurrencyValue)other).Value);
+            var cOther = (CurrencyValue)other;
+            if (cOther.Value == 0)
+            {
+                throw new ZeroDivisionException();
+            }
+
+            return new CurrencyValue(Type.Name, Value / cOther.Value);
         }
 
         public BoolValue Greater(IValue other)

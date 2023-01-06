@@ -18,5 +18,3 @@ using System.Reflection;
 //ParserTestScenarios.ParserExampleWithTypeIssues();
 
 InterpreterTestScenarions.InterperterExample();
-
-

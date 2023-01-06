@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.ErrorHandling;
 using Application.Infrastructure.Presenters;
 using Application.Models.Exceptions;
+using Application.Models.Exceptions.Interpreter;
 using Application.Models.Exceptions.SourseParser;
 using Application.Models.Grammar;
 using Application.Models.Grammar.Expressions.Terms;
@@ -28,9 +29,19 @@ namespace Application.Infrastructure.Interpreter
             _stack = new Stack<IValue>();
         }
 
-        public void InterpretProgram(ProgramRoot program)
+        public bool InterpretProgram(ProgramRoot program)
         {
-            program.Accept(this);
+            try
+            {
+                program.Accept(this);
+            }
+            catch (RuntimeException ex)
+            {
+                _errorHandler.HandleError(ex);
+                return false;
+            }
+
+            return true;
         }
         public IValue InterpretFunctionCall(FunctionDecl declaration, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments)
         {
@@ -110,11 +121,6 @@ namespace Application.Infrastructure.Interpreter
 
             var main = _allDeclarations.FirstOrDefault(x => x.Name.Equals("main"));
 
-            if (main != null)
-            {
-                // thorw
-            }
-
             InterpretFunctionCall(main!, new Parameter[] { }, new IValue[] { });
         }
 
@@ -134,9 +140,9 @@ namespace Application.Infrastructure.Interpreter
                     statement.Accept(this);
                 }
             }
-            catch (ComputingException issue)
+            catch (ComputingException)
             {
-                _errorHandler?.HandleError(issue);
+                throw;
             }
             finally
             {
@@ -177,7 +183,14 @@ namespace Application.Infrastructure.Interpreter
                 throw new RuntimeNullReferenceException(node.Position, $"Index {index}");
             }
 
-            ((CollectionInstance)@object.Instance).Values[index] = newValue;
+            var collection = (CollectionInstance)@object.Instance;
+
+            if (index >= collection.Values.Count())
+            {
+                throw new ReferenceOutOfRangeException(index, node.Position);
+            }
+
+            collection.Values[index] = newValue;
             push(new EmptyValue());
         }
 
@@ -462,7 +475,14 @@ namespace Application.Infrastructure.Interpreter
                 throw new RuntimeNullReferenceException(node.Position, $"Index {index}");
             }
 
-            push(((CollectionInstance)@object.Instance).Values[index]);
+            var collection = (CollectionInstance)@object.Instance;
+
+            if (index >= collection.Values.Count())
+            {
+                throw new ReferenceOutOfRangeException(index, node.Position);
+            }
+
+            push(collection.Values[index]);
         }
 
         public void Visit(ObjectMethodExpr node)
@@ -545,7 +565,16 @@ namespace Application.Infrastructure.Interpreter
 
         public IValue accept(IVisitable node)
         {
-            node.Accept(this);
+            try
+            {
+                node.Accept(this);
+            }
+            catch (RuntimeException ex)
+            {
+                ex.AddToStackTrace((GrammarRuleBase)node);
+                throw ex;
+            }
+
             return _stack.Pop();
         }
     }

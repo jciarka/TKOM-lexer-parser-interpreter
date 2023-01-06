@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.ErrorHandling;
 using Application.Models;
 using Application.Models.Exceptions;
+using Application.Models.Exceptions.Interpreter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,6 +42,15 @@ namespace Application.Infrastructure.Presenters
             if (_reader.TryReadLineFromPosition(exception.Position.LinePosition, out var line))
             {
                 showLineWithError(exception.Position, line);
+            }
+            if (exception is RuntimeException)
+            {
+                Console.WriteLine($"Trace:");
+
+                foreach (var node in ((RuntimeException)exception).ProgramStackTrace)
+                {
+                    Console.WriteLine($"          on " + node.ToString());
+                }
             }
             Console.WriteLine();
         }

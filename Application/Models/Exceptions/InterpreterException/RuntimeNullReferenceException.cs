@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Models.Exceptions.SourseParser
+namespace Application.Models.Exceptions.Interpreter
 {
     public class RuntimeNullReferenceException : RuntimeException
     {

@@ -8,7 +8,7 @@ namespace Application.Infrastructure.Interpreter
 {
     public interface IInterpreterEngine
     {
-        void InterpretProgram(ProgramRoot program);
+        bool InterpretProgram(ProgramRoot program);
         IValue InterpretFunctionCall(FunctionDecl declaration, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments);
         IValue InterpretLambdaCall(Lambda lambda, IEnumerable<Parameter> parameters, IEnumerable<IValue> arguments);
     }
