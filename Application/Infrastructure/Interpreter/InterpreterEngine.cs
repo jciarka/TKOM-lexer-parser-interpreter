@@ -18,9 +18,9 @@ namespace Application.Infrastructure.Interpreter
         private readonly InterpreterEngineOptions _options;
 
         private IEnumerable<FunctionDecl> _allDeclarations = new List<FunctionDecl>();
-        public FunctionCallContext? _functionContext;
-        public ProgramCallContext? _programContext;
-        public Stack<IValue> _stack;
+        private FunctionCallContext? _functionContext;
+        private ProgramCallContext? _programContext;
+        private Stack<IValue> _stack;
 
         public InterpreterEngine(IErrorHandler errorHandler, InterpreterEngineOptions? options = null)
         {
@@ -558,12 +558,12 @@ namespace Application.Infrastructure.Interpreter
             throw new NotSupportedException();
         }
 
-        public void push(IValue value)
+        private void push(IValue value)
         {
             _stack.Push(value);
         }
 
-        public IValue accept(IVisitable node)
+        private IValue accept(IVisitable node)
         {
             try
             {

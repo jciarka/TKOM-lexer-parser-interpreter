@@ -16,7 +16,7 @@ namespace Application.Models.Exceptions.SourseParser
         }
     }
 
-    internal class PropertyNotDeclaredException : ComputingException
+    public class PropertyNotDeclaredException : ComputingException
     {
         public PropertyNotDeclaredException(string className, string propertyName, RulePosition position)
             : base(new CharacterPosition(position), prepareMessage(className, propertyName, position))
@@ -29,7 +29,7 @@ namespace Application.Models.Exceptions.SourseParser
         }
     }
 
-    internal class MethodNotDeclaredException : ComputingException
+    public class MethodNotDeclaredException : ComputingException
     {
         public MethodNotDeclaredException(string className, string methodName, RulePosition position)
             : base(new CharacterPosition(position), prepareMessage(className, methodName, position))
