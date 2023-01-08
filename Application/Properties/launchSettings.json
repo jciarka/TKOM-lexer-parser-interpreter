@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Application": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\ciark\\Desktop\\example_source.txt"
+    }
+  }
+}

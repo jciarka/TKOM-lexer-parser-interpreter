@@ -1,20 +1,50 @@
-﻿using Application.Examples;
-using Application.Infrastructure.ConfigurationParser;
-using Application.Infrastructure.Lekser;
-using Application.Infrastructure.Lekser.SourceReaders;
-using Application.Infrastructure.Presenters;
-using Application.Models.Tokens;
+﻿using Application.Infrastructure;
 using System.Reflection;
 
-//LexerTestScenarios.ExampleWithConfigurationOk_File();
-//LexerTestScenarios.ExampleWithConfigurationErrors_File();
-//LexerTestScenarios.ExampleWithConfigurationOk_String();
-//LexerTestScenarios.ExampleWithConfigurationErrors_String();
-//LexerTestScenarios.ExampleWithSourceOk_File();
-//LexerTestScenarios.ExampleWithSourceOkAndCommentFilter_File();
-//LexerTestScenarios.ExampleWithSourceOk_String();
+var arguments = Environment.GetCommandLineArgs();
 
-//ParserTestScenarios.ParserExampleNoIssues();
-//ParserTestScenarios.ParserExampleWithTypeIssues();
+string? sourcePath = null;
+string? configurationPath = null;
 
-InterpreterTestScenarions.InterperterExample();
+if (arguments.Count() == 1)
+{
+    Console.WriteLine("Runnning test program...");
+    configurationPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\example_configuration.txt");
+    sourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "TestFiles\\example_source.txt");
+}
+else if (arguments.Count() == 2)
+{
+    sourcePath = arguments[1];
+
+    if (!File.Exists(sourcePath))
+    {
+        Console.WriteLine($"Source file {sourcePath} does not exists");
+        return;
+    }
+}
+else if (arguments.Count() == 3)
+{
+    sourcePath = arguments[1];
+
+    if (!File.Exists(sourcePath))
+    {
+        Console.WriteLine($"Source file {sourcePath} does not exists");
+        return;
+    }
+
+    configurationPath = arguments[2];
+
+    if (!File.Exists(configurationPath))
+    {
+        Console.WriteLine($"Configuration file {configurationPath} does not exists");
+        return;
+    }
+}
+else
+{
+    Console.WriteLine($"Invalid input arguments count: {arguments.Count()}");
+    return;
+}
+
+var engine = new LanguageEngine(sourcePath, configurationPath);
+engine.Execute();

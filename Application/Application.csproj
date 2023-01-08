@@ -15,11 +15,23 @@
 
   <ItemGroup>
     <None Remove="TestFiles\CurrencyConfguration_Errors.txt" />
-    <None Remove="TestFiles\Interpret_basic.txt" />
+    <None Remove="TestFiles\example_source.txt" />
+    <None Remove="TestFiles\old\CurrencyConfguration_Ok.txt" />
     <None Remove="TestFiles\Source_nwd.txt" />
     <None Remove="TestFiles\Source_nwd2.txt" />
     <None Remove="TestFiles\Source_nwd2_error.txt" />
     <None Remove="TestFiles\Source_Ok.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TestFiles\old\CurrencyConfguration_Errors.txt" />
+    <Content Include="TestFiles\old\CurrencyConfguration_Ok.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestFiles\old\Source_nwd.txt" />
+    <Content Include="TestFiles\old\Source_nwd2.txt" />
+    <Content Include="TestFiles\old\Source_nwd2_error.txt" />
+    <Content Include="TestFiles\old\Source_Ok.txt" />
   </ItemGroup>
 
   <ItemGroup>

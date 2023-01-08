@@ -26,14 +26,27 @@ int factorial(int a)
 void main()
 {	
     int x = 100;
-    int y = 30;
-    int z = 5;
-    # int z = 15;
 
-    print( 10 + 20 );
-
+    int y = 9;
     print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
-    print("Silnia ", z, " wynosi = ", factorial(z));  # Silnia 3 = 6
+    
+    y = 10;
+    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
+
+    y = 15;
+    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
+    
+    y = 100;
+    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
+    
+    y = 150;
+    print("nwd (", x, ", ", y, ") = ", nwd(x, y)); 
+    
+    int z = 5;
+    print("Silnia ", z, " wynosi = ", factorial(z));
+
+    # z = 15;
+    # print("Silnia ", z, " wynosi = ", factorial(z));
 
     var cad = 20 CAD;
     var usd = cad to USD;
@@ -61,7 +74,7 @@ void main()
     test3.Ballance = 22D;
 
     print("Account test1 = ", test1.Ballance, " ", test1.Currency);
-    print("Account test2 after change = ", test2.Ballance, " ", test2.Currency);
+    print("Account test2 = ", test2.Ballance, " ", test2.Currency);
     print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
 
     test1 << 1 USD;
@@ -71,6 +84,11 @@ void main()
     print("Account test2 after change = ", test2.Ballance, " ", test2.Currency);
     print("Account test3 = ", test3.Ballance, " ", test3.Currency, "\n");
 
+    test2 %> 10;
+    print("Account test2 = ", test2.Ballance, " ", test2.Currency, "\n");
+    
+    test2 <% 10;
+    print("Account test2 = ", test2.Ballance, " ", test2.Currency, "\n");
 
     var accounts = Collection< Account<USD> >();
 
@@ -78,7 +96,9 @@ void main()
     accounts.Add(test1);
     accounts.Add(test2);
 
-    var account = accounts[1];
+    var account = accounts[0];
+    print("accounts[0] = ", account.Ballance, " ", account.Currency);
+    account = accounts[1];
     print("accounts[1] = ", account.Ballance, " ", account.Currency);
 
     accounts.Delete(0);
@@ -91,8 +111,19 @@ void main()
     accounts.Add(test1);
 
     var found = accounts.First(lambda Account x => {
-        return x.Ballance > 10000D;
+        return x.Ballance > 100D;
     });
+
+    if(found != null)
+    {
+        print("found = ", account.Ballance, " ", account.Currency);
+    }
+    else
+    {
+        print("found = none");
+    }
+
+    found = accounts.First(lambda Account x => x.Ballance > 100000D);
 
     if(found != null)
     {
@@ -112,20 +143,40 @@ void main()
         j = j + 1;
     }
 
+    # RUNTIME ERRORS EXAMPLES
+
     # Zero division error example
     # print(10/0);
 
-    # Zero division error example
+    # Overflow example
     # int m = 100000 * 100000 ;
 
     # Null reference error exception example
-    Account<USD> nulltest;
+    # Account<USD> nulltest;
     # nulltest.Ballance;
 
     # Index out of range exception example
     Collection< int > ints = Collection< int >();
     ints.Add(2);
     ints.Add(3);
-    # print(ints[2]);
+    #print(ints[2]);
 
+
+    # STATIC ERRORS EXAMPLES
+
+    # wrong types arthemtic operations
+    # decimal wr1 = 5.1 + 10;
+    # decimal ok1 = 5.1 + 10D;
+
+    # variable redefinition
+    # decimal ok1 = 10D;
+
+    # not declared function call
+    # iAmNotDeclared();
+
+    # wrong types on declaration
+    # int wr2 = 10.1;
+
+    # unresolvable type on declaration
+    # var wr3;
 }
