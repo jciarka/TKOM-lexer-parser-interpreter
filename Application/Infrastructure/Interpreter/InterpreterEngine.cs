@@ -267,7 +267,7 @@ namespace Application.Infrastructure.Interpreter
             if (node.Operator == TokenType.TRANSFER_PRCT_TO)
             {
                 value = accountFrom.PrctOf(value)
-                    .To(new TypeValue(accountFrom.Type), null!);
+                    .To(new TypeValue(((GenericType)accountFrom.Type).ParametrisingType), null!);
             }
 
             accountFrom.Fund(_options.CurrencyTypesInfo, value);
@@ -292,7 +292,7 @@ namespace Application.Infrastructure.Interpreter
             if (node.Operator == TokenType.TRANSFER_PRCT_FROM)
             {
                 value = accountFrom.PrctOf(value)
-                    .To(new TypeValue(accountFrom.Type), null!);
+                    .To(new TypeValue(((GenericType)accountFrom.Type).ParametrisingType), null!);
             }
 
             accountFrom.Withdraw(_options.CurrencyTypesInfo, value, accountTo);

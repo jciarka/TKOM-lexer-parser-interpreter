@@ -100,7 +100,7 @@ namespace Application.Infrastructure.Presenters
 
             var expressionType = accept(node.Expression);
 
-            if (variableType != expressionType)
+            if (!variableType!.Equals(expressionType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, variableType!.Type));
             }

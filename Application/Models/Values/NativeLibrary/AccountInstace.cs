@@ -85,7 +85,7 @@ namespace Application.Models.Values.NativeLibrary
                 throw new NotSupportedException();
             }
 
-            return new DecimalValue(((DecimalValue)GetProperty("Ballance")).Value * dPrct.Value);
+            return new DecimalValue(((DecimalValue)GetProperty("Ballance")).Value * dPrct.Value / 100);
         }
     }
 }
