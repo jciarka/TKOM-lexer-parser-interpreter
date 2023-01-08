@@ -1,4 +1,5 @@
 ﻿using Application.Models.ConfigurationParser;
+using Application.Models.Exceptions.Interpreter;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
 using System;
@@ -32,12 +33,12 @@ namespace Application.Models.Values.BasicTypeValues
 
         public BoolValue BangEqual(IValue other)
         {
-            return new BoolValue(Value.Equals(((StringValue)other).Value));
+            return new BoolValue(!Value.Equals(((StringValue)other).Value));
         }
 
         public IValue To(IValue toType, CurrencyTypesInfo currencyInfo)
         {
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException($"conversion from string to {((TypeValue)toType).Value.Name}");
         }
 
         public override string ToString()

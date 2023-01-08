@@ -132,6 +132,7 @@ namespace Application.Models.Values.NativeLibrary
         {
             var instance = new AccountInstace(_class);
 
+            instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
             instance.SetProperty("Ballance", arguments.First());
 
             return new Reference(instance);

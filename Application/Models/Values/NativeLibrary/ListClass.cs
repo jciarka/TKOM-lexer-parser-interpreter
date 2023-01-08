@@ -1,4 +1,5 @@
 ﻿using Application.Infrastructure.Interpreter;
+using Application.Models.Exceptions.Interpreter;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
 using Application.Models.Values.BasicTypeValues;
@@ -130,7 +131,7 @@ namespace Application.Models.Values.NativeLibrary
 
             if (collection.Values.Count() >= index)
             {
-                new NotSupportedException();
+                new ReferenceOutOfRangeException(index);
             }
 
             collection.Values.RemoveAt(index);

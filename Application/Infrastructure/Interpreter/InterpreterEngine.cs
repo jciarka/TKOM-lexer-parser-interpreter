@@ -235,6 +235,11 @@ namespace Application.Infrastructure.Interpreter
         {
             var collection = (CollectionInstance)((Reference)accept(node.CollectionExpression)).Instance!;
 
+            if (collection == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Foreach");
+            }
+
             foreach (var item in collection.Values)
             {
                 _functionContext!.PushScope();
@@ -252,6 +257,11 @@ namespace Application.Infrastructure.Interpreter
         {
             var accountFrom = (AccountInstace)((Reference)accept(node.AccountExpression)).Instance!;
 
+            if (accountFrom == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Financial to");
+            }
+
             var value = accept(node.ValueExpression);
 
             if (node.Operator == TokenType.TRANSFER_PRCT_TO)
@@ -268,6 +278,11 @@ namespace Application.Infrastructure.Interpreter
         public void Visit(FinancialFromStmt node)
         {
             var accountFrom = (AccountInstace)((Reference)accept(node.AccountFromExpression)).Instance!;
+
+            if (accountFrom == null)
+            {
+                throw new RuntimeNullReferenceException(node.Position, $"Financial from");
+            }
 
             var accountTo = node.AccountToExpression != null ?
                 (AccountInstace)((Reference)accept(node.AccountToExpression)).Instance! : null;
@@ -287,7 +302,7 @@ namespace Application.Infrastructure.Interpreter
 
         public void Visit(Parameter parameter)
         {
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException();
         }
 
         public void Visit(Lambda node)
@@ -535,7 +550,7 @@ namespace Application.Infrastructure.Interpreter
                     return;
             }
 
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException();
         }
 
         public void Visit(NoneType node)
@@ -555,7 +570,7 @@ namespace Application.Infrastructure.Interpreter
 
         public void Visit(TypeType typeType)
         {
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException();
         }
 
         private void push(IValue value)

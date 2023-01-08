@@ -103,11 +103,6 @@ namespace Application.Models.Values.BasicTypeValues
             return new BoolValue(Value != ((IntValue)other).Value);
         }
 
-        public IValue To(IValue toType)
-        {
-            throw new NotSupportedException();
-        }
-
         public IValue To(IValue toType, CurrencyTypesInfo currencyInfo)
         {
             switch (((TypeValue)toType).Value.Type)
@@ -120,7 +115,7 @@ namespace Application.Models.Values.BasicTypeValues
                     return new CurrencyValue(((TypeValue)toType).Value.Name, Value);
             }
 
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException($"conversion from int to {((TypeValue)toType).Value.Name}");
         }
 
         public override string ToString()

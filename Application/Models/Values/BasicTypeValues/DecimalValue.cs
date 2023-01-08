@@ -115,7 +115,7 @@ namespace Application.Models.Values.BasicTypeValues
                     return new CurrencyValue(((TypeValue)toType).Value.Name, Value);
             }
 
-            throw new NotSupportedException();
+            throw new OperationNotSupportedException($"conversion from deciaml to {((TypeValue)toType).Value.Name}");
         }
 
         public override string ToString()
