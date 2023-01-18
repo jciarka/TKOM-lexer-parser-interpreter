@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.ErrorHandling;
 using Application.Models;
 using Application.Models.Exceptions;
+using Application.Models.Exceptions.Interpreter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +43,15 @@ namespace Application.Infrastructure.Presenters
             {
                 showLineWithError(exception.Position, line);
             }
+            if (exception is RuntimeException)
+            {
+                Console.WriteLine($"Trace:");
+
+                foreach (var node in ((RuntimeException)exception).ProgramStackTrace)
+                {
+                    Console.WriteLine($"          on " + node.ToString());
+                }
+            }
             Console.WriteLine();
         }
 
@@ -55,6 +65,11 @@ namespace Application.Infrastructure.Presenters
             builder.Append("^ HERE !");
 
             Console.WriteLine(builder.ToString());
+        }
+
+        public int ErrorCount()
+        {
+            return _errors.Count();
         }
     }
 }

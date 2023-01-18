@@ -35,6 +35,11 @@ namespace Application.Models.Grammar
             DecimalValue = numericLiteral.DecimalValue ?? numericLiteral.IntValue;
         }
 
+        public Literal(RulePosition position) : base(position)
+        {
+            Type = new NoneType();
+        }
+
         public Literal(TypeBase type, RulePosition position) : base(position)
         {
             Type = new TypeType(type);

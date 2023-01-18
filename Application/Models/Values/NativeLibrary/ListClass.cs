@@ -1,6 +1,8 @@
 ﻿using Application.Infrastructure.Interpreter;
+using Application.Models.Exceptions.Interpreter;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
+using Application.Models.Values.BasicTypeValues;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,6 +25,7 @@ namespace Application.Models.Values.NativeLibrary
         public string Name => TypeName.COLLECTION;
 
         public TypeBase ParametrisingType { get; }
+        public TypeBase Type => new GenericType(TypeName.COLLECTION, ParametrisingType);
 
         public CollectionClass(TypeBase parametrisingType)
         {
@@ -39,7 +42,7 @@ namespace Application.Models.Values.NativeLibrary
                             TypeName.COLLECTION,
                             new List<TypeBase>() { }),
 
-                        new CollectionClassConstructor(ParametrisingType)
+                        new CollectionClassConstructor(this)
                     }
                 });
 
@@ -91,69 +94,116 @@ namespace Application.Models.Values.NativeLibrary
                         new(new GenericType(TypeName.COLLECTION, ParametrisingType), new CollectionClassCopyMethod()) },
                     }
                 );
-
     }
 
     public class CollectionClassConstructor : IConstructor
     {
-        private readonly TypeBase _parametrisingType;
+        private readonly IClass _class;
 
-        public CollectionClassConstructor(TypeBase parametrisingType)
+        public CollectionClassConstructor(IClass @class)
         {
-            _parametrisingType = parametrisingType;
+            _class = @class;
         }
 
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var instance = new CollectionInstance(_class);
+            return new Reference(instance);
         }
     }
 
     public class CollectionClassAddMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            collection.Values.Add(arguments.Last());
+            return new EmptyValue();
         }
     }
 
     public class CollectionClassDeleteMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            var index = ((IntValue)arguments.Last()).Value;
+
+            if (collection.Values.Count() >= index)
+            {
+                new ReferenceOutOfRangeException(index);
+            }
+
+            collection.Values.RemoveAt(index);
+            return new EmptyValue();
         }
     }
 
     public class CollectionClassFirstMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            var lambda = (DelegateInstance)((Reference)arguments.Last()).Instance!;
+
+            var hits = collection.Values.Where(x => ((BoolValue)lambda.Call(interpreter, new IValue[] { x })).Value);
+
+            if (hits.Count() == 0)
+            {
+                return ValuesFactory.GetDefaultValue(((GenericType)collection.Type).ParametrisingType);
+            }
+
+            return hits.First();
         }
     }
 
     public class CollectionClassLastMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            var lambda = (DelegateInstance)((Reference)arguments.Last()).Instance!;
+
+            var hits = collection.Values.Where(x => ((BoolValue)lambda.Call(interpreter, new IValue[] { x })).Value);
+
+            if (hits.Count() == 0)
+            {
+                return ValuesFactory.GetDefaultValue(((GenericType)collection.Type).ParametrisingType);
+            }
+
+            return hits.Last();
         }
     }
 
     public class CollectionClassWhereMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            var lambda = (DelegateInstance)((Reference)arguments.Last()).Instance!;
+
+            var hits = collection.Values.Where(x => ((BoolValue)lambda.Call(interpreter, new IValue[] { x })).Value);
+
+            var newInstance = new CollectionInstance(collection.Class);
+
+            foreach (var hit in hits)
+            {
+                newInstance.Values.Add(hit);
+            }
+
+            return new Reference(newInstance);
         }
     }
 
     public class CollectionClassCopyMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var collection = (CollectionInstance)((Reference)arguments.First()).Instance!;
+            var newInstance = new CollectionInstance(collection.Class);
+
+            newInstance.Values.AddRange(collection.Values);
+            return new Reference(newInstance);
         }
     }
 }

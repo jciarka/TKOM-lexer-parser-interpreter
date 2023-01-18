@@ -100,7 +100,7 @@ namespace Application.Infrastructure.Presenters
 
             var expressionType = accept(node.Expression);
 
-            if (variableType != expressionType)
+            if (!variableType!.Equals(expressionType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, variableType!.Type));
             }
@@ -108,13 +108,26 @@ namespace Application.Infrastructure.Presenters
             push(new NoneType());
         }
 
-        public void Visit(PropertyAssignmentStatement propertyAssignmentStatement)
+        public void Visit(PropertyAssignmentStatement node)
         {
+            var exprType = accept(node.Expression);
+            var propertyType = accept(node.Property);
+
+            if (!exprType.Equals(propertyType))
+                _errorHandler.HandleError(new InvalidTypeException(exprType, node.Position, propertyType.Type));
+
             push(new NoneType());
         }
 
-        public void Visit(IndexAssignmentStatement indexAssignmentStatement)
+        public void Visit(IndexAssignmentStatement node)
         {
+            var exprType = accept(node.IndexExpr);
+
+            if (!checkType(exprType, TypeEnum.INT))
+            {
+                _errorHandler.HandleError(new InvalidTypeException(exprType, node.Position, TypeEnum.INT));
+            }
+
             push(new NoneType());
         }
 
@@ -130,7 +143,7 @@ namespace Application.Infrastructure.Presenters
             {
                 node.Type = expressionType;
             }
-            else if (!node.Type.Equals(expressionType))
+            else if (expressionType != null && !node.Type.Equals(expressionType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(expressionType, node.Position, node.Type.Type));
             }
@@ -155,7 +168,7 @@ namespace Application.Infrastructure.Presenters
                 }
                 else
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, TypeEnum.VOID));
+                    _errorHandler.HandleError(new InvalidTypeException(returnExpressionType, node.Position, TypeEnum.NULL));
                 }
             }
 
@@ -199,19 +212,32 @@ namespace Application.Infrastructure.Presenters
         {
             var collectionType = accept(node.CollectionExpression);
 
-            if (collectionType!.GetType() != typeof(GenericType))
+            if (collectionType!.GetType() != typeof(GenericType) || !collectionType.Name.Equals(TypeName.COLLECTION))
             {
-                _errorHandler.HandleError(new InvalidTypeException(collectionType, node.Position, TypeEnum.ACCOUNT));
+                _errorHandler.HandleError(new InvalidTypeException(collectionType, node.Position, TypeEnum.COLLECTION));
             }
 
-            var genericCollectionType = (GenericType)collectionType;
+            var genericCollectionType = collectionType as GenericType;
 
-            if (node.Parameter.Type != genericCollectionType)
+            if (genericCollectionType == null || !node.Parameter.Type.Equals(genericCollectionType.ParametrisingType))
             {
                 _errorHandler.HandleError(new InvalidTypeException(genericCollectionType, node.Position, node.Parameter.Type.Type));
             }
 
-            node.Statement.Accept(this);
+            _context!.PushScope();
+            _context!.Scope.TryAdd(node.Parameter.Identifier, node.Parameter.Type);
+            try
+            {
+                node.Statement.Accept(this);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                _context!.PopScope();
+            }
 
             push(new NoneType());
         }
@@ -369,6 +395,23 @@ namespace Application.Infrastructure.Presenters
 
         public void Visit(OrExpr node)
         {
+            var first = accept(node.FirstOperand);
+
+            if (!checkType(first, TypeEnum.BOOL))
+            {
+                _errorHandler.HandleError(new InvalidTypeException(null, node.Position, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY));
+            }
+
+            foreach (var second in node.Operands)
+            {
+                var next = accept(second);
+
+                if (first!.Name != next?.Name)
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, first!.Type));
+                }
+            }
+
             push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
         }
 
@@ -461,8 +504,25 @@ namespace Application.Infrastructure.Presenters
             push(((TypeType)next!).OfType);
         }
 
-        public void Visit(AndExpr andExpr)
+        public void Visit(AndExpr node)
         {
+            var first = accept(node.FirstOperand);
+
+            if (!checkType(first, TypeEnum.BOOL))
+            {
+                _errorHandler.HandleError(new InvalidTypeException(null, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
+            }
+
+            foreach (var operand in node.Operands)
+            {
+                var next = accept(operand);
+
+                if (first!.Type != next?.Type)
+                {
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, first!.Type));
+                }
+            }
+
             push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
         }
 
@@ -494,11 +554,29 @@ namespace Application.Infrastructure.Presenters
 
                 if (first!.Type != next?.Type)
                 {
-                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
+                    if (!checkOperator(operand.Item1, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL) || next?.Type != TypeEnum.NULL)
+                    {
+                        _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL));
+                    }
+                }
+
+                if (!checkOperator(operand.Item1, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)
+                    && !checkType(next!, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY))
+                {
+                    // only comparable type expected
+                    _errorHandler.HandleError(new InvalidTypeException(next, node.Position, TypeEnum.INT, TypeEnum.DECIMAL, TypeEnum.CURRENCY));
                 }
             }
 
             push(new BasicType(TypeName.BOOL, TypeEnum.BOOL));
+        }
+
+        private bool checkOperator(TokenType given, params TokenType[] expected)
+        {
+            if (expected.Contains(given))
+                return true;
+
+            return false;
         }
 
         public void Visit(PrctOfExpr node)
@@ -564,7 +642,7 @@ namespace Application.Infrastructure.Presenters
             if (!_context!.ClassSet.TryFindMethod(
                 objectType, new FunctionCallExprDescription(node.Method, parameterTypes), out var returnType))
             {
-                _errorHandler?.HandleError(new ClassNotDeclaredException(objectType.Name, node.Position));
+                _errorHandler?.HandleError(new MethodNotDeclaredException(objectType.Name, node.Method, node.Position));
             }
 
             push(returnType!);
@@ -601,7 +679,7 @@ namespace Application.Infrastructure.Presenters
             throw new NotImplementedException();
         }
 
-        public bool checkType(TypeBase type, params TypeEnum[] types)
+        private bool checkType(TypeBase type, params TypeEnum[] types)
         {
             if (type == null)
             {
@@ -611,12 +689,12 @@ namespace Application.Infrastructure.Presenters
             return types.Any(t => type?.Type == t);
         }
 
-        public void push(TypeBase type)
+        private void push(TypeBase type)
         {
             _stack.Push(type);
         }
 
-        public TypeBase accept(IVisitable node)
+        private TypeBase accept(IVisitable node)
         {
             node.Accept(this);
             return _stack.Pop();

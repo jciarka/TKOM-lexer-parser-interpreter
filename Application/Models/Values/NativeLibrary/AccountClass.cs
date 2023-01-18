@@ -1,6 +1,7 @@
 ﻿using Application.Infrastructure.Interpreter;
 using Application.Models.Grammar.Expressions.Terms;
 using Application.Models.Types;
+using Application.Models.Values.BasicTypeValues;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,6 +24,8 @@ namespace Application.Models.Values.NativeLibrary
         public string Name => TypeName.ACCOUNT;
         public TypeBase _currency;
 
+        public TypeBase Type => new GenericType(TypeName.ACCOUNT, _currency);
+
         public AccountClass(TypeBase currency)
         {
             _currency = currency;
@@ -37,21 +40,21 @@ namespace Application.Models.Values.NativeLibrary
                             new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
                             new List<TypeBase>() { }),
-                        new AccountClassTypeConstructor()
+                        new AccountClassDefaultConstructor(this)
                     },
                     {
                         new FixedArgumentsFunctionSignature(
                             new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
                             new List<TypeBase>() { new BasicType(TypeName.INT, TypeEnum.INT) }),
-                        new AccountClassTypeAndIntValueConstructor()
+                        new AccountClassIntValueConstructor(this)
                     },
                     {
                         new FixedArgumentsFunctionSignature(
                             new GenericType(TypeName.ACCOUNT, _currency),
                             TypeName.ACCOUNT,
                             new List<TypeBase>() { new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL) }),
-                        new AccountClassTypeConstructor()
+                        new AccountClassDeciamalValueConstructor(this)
                     }
                 });
 
@@ -72,37 +75,84 @@ namespace Application.Models.Values.NativeLibrary
                         new(new GenericType(TypeName.ACCOUNT, _currency), new AccountCopyMethod())
                     }
                 });
+
     }
 
-    public class AccountClassTypeConstructor : IConstructor
+    public class AccountClassDefaultConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        private readonly IClass _class;
+
+        public AccountClassDefaultConstructor(AccountClass @class)
         {
-            throw new NotImplementedException();
+            _class = @class;
+        }
+
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
+        {
+            var instance = new AccountInstace(_class);
+
+            instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
+
+            return new Reference(instance);
         }
     }
 
-    public class AccountClassTypeAndIntValueConstructor : IConstructor
+    public class AccountClassIntValueConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        private readonly IClass _class;
+
+        public AccountClassIntValueConstructor(AccountClass @class)
         {
-            throw new NotImplementedException();
+            _class = @class;
+        }
+
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
+        {
+            var instance = new AccountInstace(_class);
+
+            instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
+
+            instance.SetProperty("Ballance", arguments.First().To(
+                new TypeValue(new BasicType(TypeName.DECIMAL, TypeEnum.DECIMAL)), new()));
+
+            return new Reference(instance);
         }
     }
 
-    public class AccountClassTypeAndDeciamlValueConstructor : IConstructor
+    public class AccountClassDeciamalValueConstructor : IConstructor
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        private readonly IClass _class;
+
+        public AccountClassDeciamalValueConstructor(AccountClass @class)
         {
-            throw new NotImplementedException();
+            _class = @class;
+        }
+
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
+        {
+            var instance = new AccountInstace(_class);
+
+            instance.SetProperty("Currency", new TypeValue(((GenericType)_class.Type).ParametrisingType));
+            instance.SetProperty("Ballance", arguments.First());
+
+            return new Reference(instance);
         }
     }
 
     public class AccountCopyMethod : IMethod
     {
-        public ValueBase Call(IInterpreterEngine interpreter, params ValueBase[] arguments)
+        public IValue Call(IInterpreterEngine interpreter, IEnumerable<IValue> arguments)
         {
-            throw new NotImplementedException();
+            var old = ((Reference)arguments.First()).Instance!;
+
+            var newInstance = new AccountInstace(old.Class);
+
+            foreach (var property in old.Class.Properties.Keys)
+            {
+                newInstance.SetProperty(property, old.GetProperty(property));
+            }
+
+            return new Reference(newInstance);
         }
     }
 }

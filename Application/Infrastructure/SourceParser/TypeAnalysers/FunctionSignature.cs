@@ -59,7 +59,7 @@ namespace Application.Infrastructure.Interpreter
     }
 
 
-    class FixedArgumentsFunctionSignature : FunctionSignature
+    public class FixedArgumentsFunctionSignature : FunctionSignature
     {
         public FixedArgumentsFunctionSignature(FunctionDecl declaration) : base(declaration)
         {
@@ -83,7 +83,7 @@ namespace Application.Infrastructure.Interpreter
         }
     }
 
-    class VariableArgumentsFunctionSignature : FunctionSignature
+    public class VariableArgumentsFunctionSignature : FunctionSignature
     {
         public VariableArgumentsFunctionSignature(TypeBase returnType, string identifier)
                : base(returnType, identifier, new List<TypeBase>())

@@ -39,9 +39,10 @@ namespace Application.Examples
 
                 var presenter = new GrammarPresenter();
 
-                root.Accept(presenter, 0);
+                root.Accept(presenter);
             }
         }
+
 
         public static void ParserExampleWithTypeIssues()
         {
@@ -69,7 +70,7 @@ namespace Application.Examples
 
                 var presenter = new GrammarPresenter();
 
-                root.Accept(presenter, 0);
+                root.Accept(presenter);
             }
         }
     }

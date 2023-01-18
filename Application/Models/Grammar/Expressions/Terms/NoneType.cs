@@ -10,7 +10,7 @@ namespace Application.Models.Grammar.Expressions.Terms
 {
     public class NoneType : TypeBase
     {
-        public NoneType() : base(TypeName.VOID, TypeEnum.VOID)
+        public NoneType() : base(TypeName.NULL, TypeEnum.NULL)
         {
         }
 

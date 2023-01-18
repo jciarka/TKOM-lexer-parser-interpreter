@@ -16,7 +16,7 @@ namespace Application.Models.Exceptions.SourseParser
         }
     }
 
-    internal class PropertyNotDeclaredException : ComputingException
+    public class PropertyNotDeclaredException : ComputingException
     {
         public PropertyNotDeclaredException(string className, string propertyName, RulePosition position)
             : base(new CharacterPosition(position), prepareMessage(className, propertyName, position))
@@ -26,6 +26,19 @@ namespace Application.Models.Exceptions.SourseParser
         private static string prepareMessage(string className, string propertyName, RulePosition position)
         {
             return $"(Line: {position.Line}) Property {propertyName} does not exists at class {className}.";
+        }
+    }
+
+    public class MethodNotDeclaredException : ComputingException
+    {
+        public MethodNotDeclaredException(string className, string methodName, RulePosition position)
+            : base(new CharacterPosition(position), prepareMessage(className, methodName, position))
+        {
+        }
+
+        private static string prepareMessage(string className, string methodName, RulePosition position)
+        {
+            return $"(Line: {position.Line}) Method {methodName} does not exists at class {className}.";
         }
     }
 }

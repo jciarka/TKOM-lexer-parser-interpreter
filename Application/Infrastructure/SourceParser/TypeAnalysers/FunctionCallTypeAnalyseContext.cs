@@ -61,7 +61,7 @@ namespace Application.Infrastructure.Interpreter
 
         public bool CheckReturnType(TypeBase type)
         {
-            if (FunctionType == FunctionType.LAMBDA && ReturnType.Type == TypeEnum.VOID)
+            if (FunctionType == FunctionType.LAMBDA && ReturnType.Type == TypeEnum.NULL)
             {
                 ReturnType = type;
                 return true;
